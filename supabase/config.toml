@@ -1,1 +1,4 @@
 project_id = "vjghbivszywmcykezppv"
+
+[functions.process-captures]
+verify_jwt = false

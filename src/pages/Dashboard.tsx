@@ -57,9 +57,10 @@ const Dashboard = () => {
 
     setCapturing(true);
     try {
+      const jobIds: string[] = [];
       for (const deviceId of selectedDevices) {
         const device = devicePresets.find((d) => d.id === deviceId)!;
-        const { error } = await supabase.from("capture_jobs").insert({
+        const { data, error } = await supabase.from("capture_jobs").insert({
           user_id: user!.id,
           url: url.trim(),
           device_preset: deviceId,
@@ -74,10 +75,22 @@ const Dashboard = () => {
           hide_chat_widgets: hideChat,
           hide_sticky_headers: hideStickyHeaders,
           hide_popups: hidePopups,
-        });
+        }).select("id");
         if (error) throw error;
+        if (data) jobIds.push(data[0].id);
       }
-      toast.success(`${selectedDevices.length} capture job(s) queued!`);
+      toast.success(`${selectedDevices.length} capture job(s) queued! Processing…`);
+
+      // Trigger the capture engine
+      const { error: fnError } = await supabase.functions.invoke("process-captures", {
+        body: { job_ids: jobIds },
+      });
+      if (fnError) {
+        console.error("Process captures error:", fnError);
+        toast.error("Captures queued but processing failed. They will be retried.");
+      } else {
+        toast.success("Captures completed!");
+      }
     } catch (err: any) {
       toast.error(err.message || "Failed to create capture job");
     } finally {
