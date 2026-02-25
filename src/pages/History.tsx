@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Download, ExternalLink, RefreshCw, Loader2, AlertCircle, CheckCircle, Clock, XCircle } from "lucide-react";
+import { Download, ExternalLink, RefreshCw, Loader2, AlertCircle, CheckCircle, Clock, XCircle, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -56,6 +56,21 @@ const History = () => {
   useEffect(() => { fetchData(); }, [user]);
 
   const getAsset = (jobId: string) => assets.find((a) => a.job_id === jobId);
+
+  const shareCapture = async (assetId: string) => {
+    if (!user) return;
+    const slug = Math.random().toString(36).substring(2, 10);
+    const { error } = await supabase.from("share_links").insert({
+      asset_id: assetId,
+      user_id: user.id,
+      slug,
+      allow_download: true,
+    });
+    if (error) { toast.error("Failed to create share link"); return; }
+    const url = `${window.location.origin}/s/${slug}`;
+    await navigator.clipboard.writeText(url);
+    toast.success("Share link copied to clipboard!");
+  };
 
   const retryJob = async (jobId: string) => {
     await supabase.from("capture_jobs").update({ status: "queued", error_message: null }).eq("id", jobId);
@@ -114,6 +129,9 @@ const History = () => {
                     {asset && (
                       <>
                         {asset.file_size_bytes && <span className="text-xs text-muted-foreground">{formatSize(asset.file_size_bytes)}</span>}
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => shareCapture(asset.id)} title="Share">
+                          <Share2 className="w-4 h-4" />
+                        </Button>
                         <a href={asset.file_url} target="_blank" rel="noopener noreferrer">
                           <Button variant="ghost" size="icon" className="h-8 w-8"><ExternalLink className="w-4 h-4" /></Button>
                         </a>

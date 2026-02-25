@@ -9,7 +9,9 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import History from "./pages/History";
 import Projects from "./pages/Projects";
+import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
+import SharedCapture from "./pages/SharedCapture";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +29,8 @@ const App = () => (
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
             <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/s/:slug" element={<SharedCapture />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
