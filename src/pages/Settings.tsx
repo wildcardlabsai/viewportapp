@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, PLAN_TIERS } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { User, CreditCard, Loader2 } from "lucide-react";
+import { User, CreditCard, Loader2, ExternalLink } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayout";
 import ApiKeysSection from "@/components/ApiKeysSection";
 import UsageDashboard from "@/components/UsageDashboard";
+import { useSearchParams } from "react-router-dom";
 
 interface Profile {
   full_name: string | null;
@@ -22,11 +23,25 @@ interface Profile {
 const planLimits: Record<string, number> = { free: 10, pro: 100, agency: 500 };
 
 const Settings = () => {
-  const { user } = useAuth();
+  const { user, plan, subscribed, subscriptionEnd, refreshSubscription, checkingSubscription } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [fullName, setFullName] = useState("");
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [upgradeLoading, setUpgradeLoading] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+
+  // Handle checkout return
+  useEffect(() => {
+    const checkout = searchParams.get("checkout");
+    if (checkout === "success") {
+      toast.success("Subscription activated! Refreshing…");
+      refreshSubscription();
+    } else if (checkout === "canceled") {
+      toast.info("Checkout was canceled.");
+    }
+  }, [searchParams, refreshSubscription]);
 
   useEffect(() => {
     if (!user) return;
@@ -50,7 +65,35 @@ const Settings = () => {
     setSaving(false);
   };
 
-  const dailyLimit = planLimits[profile?.plan || "free"] || 10;
+  const handleUpgrade = async (priceId: string, planKey: string) => {
+    setUpgradeLoading(planKey);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: { priceId },
+      });
+      if (error) throw error;
+      if (data?.url) window.open(data.url, "_blank");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to start checkout");
+    } finally {
+      setUpgradeLoading(null);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    setPortalLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("customer-portal");
+      if (error) throw error;
+      if (data?.url) window.open(data.url, "_blank");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to open subscription portal");
+    } finally {
+      setPortalLoading(false);
+    }
+  };
+
+  const dailyLimit = planLimits[plan] || 10;
   const dailyUsed = profile?.daily_captures_used || 0;
   const usagePercent = Math.min((dailyUsed / dailyLimit) * 100, 100);
 
@@ -101,11 +144,43 @@ const Settings = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Current Plan</p>
-                <p className="text-xl font-bold capitalize">{profile?.plan || "Free"}</p>
+                <p className="text-xl font-bold capitalize">{plan}</p>
+                {subscribed && subscriptionEnd && (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Renews {new Date(subscriptionEnd).toLocaleDateString()}
+                  </p>
+                )}
               </div>
-              {profile?.plan === "free" && (
-                <Button variant="outline" size="sm">Upgrade</Button>
-              )}
+              <div className="flex gap-2">
+                {subscribed && (
+                  <Button variant="outline" size="sm" onClick={handleManageSubscription} disabled={portalLoading}>
+                    {portalLoading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <ExternalLink className="w-3 h-3 mr-1" />}
+                    Manage
+                  </Button>
+                )}
+                {plan === "free" && (
+                  <Button
+                    variant="brand"
+                    size="sm"
+                    onClick={() => handleUpgrade(PLAN_TIERS.pro.price_id, "pro")}
+                    disabled={!!upgradeLoading}
+                  >
+                    {upgradeLoading === "pro" && <Loader2 className="w-3 h-3 animate-spin mr-1" />}
+                    Upgrade to Pro
+                  </Button>
+                )}
+                {plan === "pro" && (
+                  <Button
+                    variant="brand"
+                    size="sm"
+                    onClick={() => handleUpgrade(PLAN_TIERS.agency.price_id, "agency")}
+                    disabled={!!upgradeLoading}
+                  >
+                    {upgradeLoading === "agency" && <Loader2 className="w-3 h-3 animate-spin mr-1" />}
+                    Upgrade to Agency
+                  </Button>
+                )}
+              </div>
             </div>
             <div>
               <div className="flex justify-between text-sm mb-2">
