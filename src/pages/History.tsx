@@ -5,6 +5,7 @@ import { Download, ExternalLink, RefreshCw, Loader2, AlertCircle, CheckCircle, C
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayout";
+import MockupDialog from "@/components/MockupDialog";
 
 interface CaptureJob {
   id: string;
