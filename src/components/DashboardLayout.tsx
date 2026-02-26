@@ -1,7 +1,7 @@
 import { ReactNode, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Camera, History, FolderOpen, Settings, LogOut, Menu, X, Moon, Sun } from "lucide-react";
+import { Camera, History, FolderOpen, Settings, LogOut, Menu, X, Moon, Sun, Clock, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import viewportLogo from "@/assets/viewport-logo.png";
 
