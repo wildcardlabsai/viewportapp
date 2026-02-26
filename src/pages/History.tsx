@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Download, ExternalLink, RefreshCw, Loader2, AlertCircle, CheckCircle, Clock, XCircle, Share2 } from "lucide-react";
+import { Download, ExternalLink, RefreshCw, Loader2, AlertCircle, CheckCircle, Clock, XCircle, Share2, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayout";
