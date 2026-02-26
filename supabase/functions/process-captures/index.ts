@@ -78,6 +78,11 @@ Deno.serve(async (req) => {
           block_ads: String(job.hide_popups),
         });
 
+        // Custom CSS injection
+        if (job.custom_css) {
+          params.set("css", job.custom_css);
+        }
+
         if (job.background === "transparent") {
           params.set("omit_background", "true");
         } else if (job.background === "dark") {

@@ -184,9 +184,12 @@ const MockupDialog = ({ open, onOpenChange, imageUrl }: MockupDialogProps) => {
           </div>
 
           <div className="flex-1" />
+          <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
+            PDF
+          </Button>
           <Button size="sm" onClick={handleDownload} disabled={downloading}>
             <Download className="w-4 h-4 mr-1" />
-            {downloading ? "Exporting…" : "Download"}
+            {downloading ? "Exporting…" : "Download PNG"}
           </Button>
         </div>
 
