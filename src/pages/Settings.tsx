@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { User, CreditCard, BarChart3, Loader2 } from "lucide-react";
+import { User, CreditCard, Loader2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayout";
+import ApiKeysSection from "@/components/ApiKeysSection";
+import UsageDashboard from "@/components/UsageDashboard";
 
 interface Profile {
   full_name: string | null;
@@ -25,20 +27,15 @@ const Settings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [fullName, setFullName] = useState("");
-  const [totalCaptures, setTotalCaptures] = useState(0);
 
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
-      const [profileRes, countRes] = await Promise.all([
-        supabase.from("profiles").select("*").eq("user_id", user.id).single(),
-        supabase.from("capture_jobs").select("id", { count: "exact", head: true }).eq("user_id", user.id),
-      ]);
-      if (profileRes.data) {
-        setProfile(profileRes.data);
-        setFullName(profileRes.data.full_name || "");
+      const { data } = await supabase.from("profiles").select("*").eq("user_id", user.id).single();
+      if (data) {
+        setProfile(data);
+        setFullName(data.full_name || "");
       }
-      setTotalCaptures(countRes.count || 0);
       setLoading(false);
     };
     fetchData();
@@ -121,22 +118,11 @@ const Settings = () => {
           </div>
         </section>
 
-        {/* Stats */}
-        <section className="space-y-4">
-          <div className="flex items-center gap-2 text-lg font-semibold">
-            <BarChart3 className="w-5 h-5 text-primary" /> Usage Stats
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-5 rounded-xl border bg-card text-center">
-              <p className="text-3xl font-bold">{totalCaptures}</p>
-              <p className="text-sm text-muted-foreground">Total Captures</p>
-            </div>
-            <div className="p-5 rounded-xl border bg-card text-center">
-              <p className="text-3xl font-bold capitalize">{profile?.plan || "Free"}</p>
-              <p className="text-sm text-muted-foreground">Current Plan</p>
-            </div>
-          </div>
-        </section>
+        {/* Usage Analytics */}
+        <UsageDashboard />
+
+        {/* API Keys */}
+        <ApiKeysSection />
       </div>
     </DashboardLayout>
   );

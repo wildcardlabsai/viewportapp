@@ -1,7 +1,7 @@
 import { ReactNode, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Camera, History, FolderOpen, Settings, LogOut, Menu, X, Moon, Sun } from "lucide-react";
+import { Camera, History, FolderOpen, Settings, LogOut, Menu, X, Moon, Sun, Clock, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import viewportLogo from "@/assets/viewport-logo.png";
 
@@ -9,6 +9,8 @@ const navItems = [
   { icon: Camera, label: "New Capture", path: "/dashboard" },
   { icon: History, label: "History", path: "/history" },
   { icon: FolderOpen, label: "Projects", path: "/projects" },
+  { icon: Clock, label: "Schedules", path: "/schedules" },
+  { icon: Users, label: "Team", path: "/team" },
   { icon: Settings, label: "Settings", path: "/settings" },
 ];
 

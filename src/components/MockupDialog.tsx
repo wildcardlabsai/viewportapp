@@ -127,6 +127,15 @@ const MockupDialog = ({ open, onOpenChange, imageUrl }: MockupDialogProps) => {
     }
   };
 
+  const handleDownloadPdf = () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow || !containerRef.current) return;
+    const html = `<html><head><title>Mockup</title><style>body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;}img{max-width:100%;}</style></head><body>${containerRef.current.innerHTML}</body></html>`;
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.onload = () => { printWindow.print(); };
+  };
+
   const bgClass = backgrounds.find((b) => b.id === bg)?.className ?? "";
 
   return (
@@ -175,9 +184,12 @@ const MockupDialog = ({ open, onOpenChange, imageUrl }: MockupDialogProps) => {
           </div>
 
           <div className="flex-1" />
+          <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
+            PDF
+          </Button>
           <Button size="sm" onClick={handleDownload} disabled={downloading}>
             <Download className="w-4 h-4 mr-1" />
-            {downloading ? "Exporting…" : "Download"}
+            {downloading ? "Exporting…" : "Download PNG"}
           </Button>
         </div>
 

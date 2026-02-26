@@ -12,6 +12,8 @@ import Projects from "./pages/Projects";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import SharedCapture from "./pages/SharedCapture";
+import Schedules from "./pages/Schedules";
+import Team from "./pages/Team";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +32,8 @@ const App = () => (
             <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
             <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/schedules" element={<ProtectedRoute><Schedules /></ProtectedRoute>} />
+            <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
             <Route path="/s/:slug" element={<SharedCapture />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

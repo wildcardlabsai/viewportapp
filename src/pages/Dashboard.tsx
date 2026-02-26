@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Camera, Monitor, Smartphone, Tablet, Loader2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Camera, Monitor, Smartphone, Tablet, Loader2, List } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -23,10 +24,17 @@ const devicePresets = [
   { id: "ipad-landscape", label: "iPad Pro (landscape)", width: 1366, height: 1024, icon: Tablet },
 ];
 
+interface Project {
+  id: string;
+  name: string;
+}
+
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [url, setUrl] = useState("");
+  const [bulkUrls, setBulkUrls] = useState("");
+  const [inputMode, setInputMode] = useState<"single" | "bulk">("single");
   const [selectedDevices, setSelectedDevices] = useState<string[]>(["desktop-1440"]);
   const [capturing, setCapturing] = useState(false);
   const [captureMode, setCaptureMode] = useState("viewport");
@@ -38,6 +46,17 @@ const Dashboard = () => {
   const [hideChat, setHideChat] = useState(false);
   const [hideStickyHeaders, setHideStickyHeaders] = useState(false);
   const [hidePopups, setHidePopups] = useState(false);
+  const [customCss, setCustomCss] = useState("");
+  const [projectId, setProjectId] = useState<string>("none");
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [captureProgress, setCaptureProgress] = useState<{ current: number; total: number } | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("projects").select("id, name").eq("user_id", user.id).order("name").then(({ data }) => {
+      if (data) setProjects(data);
+    });
+  }, [user]);
 
   const toggleDevice = (id: string) => {
     setSelectedDevices((prev) =>
@@ -45,35 +64,58 @@ const Dashboard = () => {
     );
   };
 
+  const getUrls = (): string[] => {
+    if (inputMode === "single") return url.trim() ? [url.trim()] : [];
+    return bulkUrls
+      .split(/[\n,]+/)
+      .map((u) => u.trim())
+      .filter((u) => u.length > 0);
+  };
+
   const handleCapture = async () => {
-    if (!url.trim()) { toast.error("Please enter a URL"); return; }
+    const urls = getUrls();
+    if (urls.length === 0) { toast.error("Please enter a URL"); return; }
     if (selectedDevices.length === 0) { toast.error("Please select at least one device"); return; }
 
     setCapturing(true);
+    const total = urls.length * selectedDevices.length;
+    setCaptureProgress({ current: 0, total });
+
     try {
       const jobIds: string[] = [];
-      for (const deviceId of selectedDevices) {
-        const device = devicePresets.find((d) => d.id === deviceId)!;
-        const { data, error } = await supabase.from("capture_jobs").insert({
-          user_id: user!.id,
-          url: url.trim(),
-          device_preset: deviceId,
-          viewport_width: device.width,
-          viewport_height: device.height,
-          device_scale_factor: parseFloat(scale),
-          full_page: captureMode === "fullpage",
-          delay_seconds: parseInt(delay),
-          output_format: format,
-          background,
-          hide_cookie_banners: hideCookies,
-          hide_chat_widgets: hideChat,
-          hide_sticky_headers: hideStickyHeaders,
-          hide_popups: hidePopups,
-        }).select("id");
-        if (error) throw error;
-        if (data) jobIds.push(data[0].id);
+      let current = 0;
+
+      for (const captureUrl of urls) {
+        for (const deviceId of selectedDevices) {
+          const device = devicePresets.find((d) => d.id === deviceId)!;
+          const insertData: any = {
+            user_id: user!.id,
+            url: captureUrl,
+            device_preset: deviceId,
+            viewport_width: device.width,
+            viewport_height: device.height,
+            device_scale_factor: parseFloat(scale),
+            full_page: captureMode === "fullpage",
+            delay_seconds: parseInt(delay),
+            output_format: format,
+            background,
+            hide_cookie_banners: hideCookies,
+            hide_chat_widgets: hideChat,
+            hide_sticky_headers: hideStickyHeaders,
+            hide_popups: hidePopups,
+          };
+          if (projectId !== "none") insertData.project_id = projectId;
+          if (customCss.trim()) insertData.custom_css = customCss.trim();
+
+          const { data, error } = await supabase.from("capture_jobs").insert(insertData).select("id");
+          if (error) throw error;
+          if (data) jobIds.push(data[0].id);
+          current++;
+          setCaptureProgress({ current, total });
+        }
       }
-      toast.success(`${selectedDevices.length} capture(s) queued — processing…`);
+
+      toast.success(`${total} capture(s) queued — processing…`);
 
       const { error: fnError } = await supabase.functions.invoke("process-captures", {
         body: { job_ids: jobIds },
@@ -88,8 +130,11 @@ const Dashboard = () => {
       toast.error(err.message || "Failed to create capture job");
     } finally {
       setCapturing(false);
+      setCaptureProgress(null);
     }
   };
+
+  const urlCount = getUrls().length;
 
   return (
     <DashboardLayout active="New Capture">
@@ -98,14 +143,57 @@ const Dashboard = () => {
 
         {/* URL Input */}
         <div className="mb-8">
-          <Label htmlFor="url" className="text-base font-semibold mb-2 block">Website URL</Label>
-          <div className="flex gap-3">
-            <Input id="url" type="url" placeholder="https://example.com" value={url} onChange={(e) => setUrl(e.target.value)} className="text-base h-12" />
-            <Button variant="brand" size="lg" className="px-8" onClick={handleCapture} disabled={capturing}>
-              {capturing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Camera className="w-4 h-4 mr-2" />}
-              {capturing ? "Capturing…" : "Capture"}
-            </Button>
+          <div className="flex items-center justify-between mb-2">
+            <Label className="text-base font-semibold">Website URL</Label>
+            <div className="flex gap-1 p-0.5 rounded-lg bg-muted">
+              <button onClick={() => setInputMode("single")} className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${inputMode === "single" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}>
+                Single
+              </button>
+              <button onClick={() => setInputMode("bulk")} className={`px-3 py-1 rounded-md text-xs font-medium transition-colors flex items-center gap-1 ${inputMode === "bulk" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}>
+                <List className="w-3 h-3" /> Bulk
+              </button>
+            </div>
           </div>
+
+          {inputMode === "single" ? (
+            <div className="flex gap-3">
+              <Input type="url" placeholder="https://example.com" value={url} onChange={(e) => setUrl(e.target.value)} className="text-base h-12" />
+              <Button variant="brand" size="lg" className="px-8" onClick={handleCapture} disabled={capturing}>
+                {capturing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Camera className="w-4 h-4 mr-2" />}
+                {capturing ? "Capturing…" : "Capture"}
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <Textarea
+                placeholder={"Paste URLs, one per line:\nhttps://example.com\nhttps://another-site.com\nhttps://third-site.com"}
+                value={bulkUrls}
+                onChange={(e) => setBulkUrls(e.target.value)}
+                className="min-h-[120px] text-sm font-mono"
+              />
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  {urlCount} URL{urlCount !== 1 ? "s" : ""} × {selectedDevices.length} device{selectedDevices.length !== 1 ? "s" : ""} = {urlCount * selectedDevices.length} capture{urlCount * selectedDevices.length !== 1 ? "s" : ""}
+                </span>
+                <Button variant="brand" size="lg" className="px-8" onClick={handleCapture} disabled={capturing}>
+                  {capturing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Camera className="w-4 h-4 mr-2" />}
+                  {capturing && captureProgress ? `${captureProgress.current}/${captureProgress.total}` : "Capture All"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Project Selector */}
+        <div className="mb-6">
+          <Label className="text-sm font-medium mb-2 block">Assign to Project (optional)</Label>
+          <Select value={projectId} onValueChange={setProjectId}>
+            <SelectTrigger className="w-64"><SelectValue placeholder="No project" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No project</SelectItem>
+              {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Device Presets */}
@@ -130,6 +218,7 @@ const Dashboard = () => {
           <TabsList>
             <TabsTrigger value="capture">Capture Options</TabsTrigger>
             <TabsTrigger value="hiding">Element Hiding</TabsTrigger>
+            <TabsTrigger value="css">Custom CSS</TabsTrigger>
           </TabsList>
           <TabsContent value="capture" className="space-y-5 mt-4">
             <div className="grid md:grid-cols-2 gap-5">
@@ -167,6 +256,17 @@ const Dashboard = () => {
                 <Switch id={toggle.id} checked={toggle.checked} onCheckedChange={toggle.onChange} />
               </div>
             ))}
+          </TabsContent>
+          <TabsContent value="css" className="mt-4">
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">Inject custom CSS into the page before capturing. Use this to hide specific elements or adjust styles.</p>
+              <Textarea
+                placeholder={".annoying-banner { display: none !important; }\n.hero { background: #000; }"}
+                value={customCss}
+                onChange={(e) => setCustomCss(e.target.value)}
+                className="min-h-[120px] font-mono text-sm"
+              />
+            </div>
           </TabsContent>
         </Tabs>
       </div>

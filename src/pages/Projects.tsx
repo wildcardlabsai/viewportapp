@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, FolderOpen, Loader2 } from "lucide-react";
+import { Plus, FolderOpen, Loader2, Trash2, Pencil, Image, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -20,12 +20,24 @@ const Projects = () => {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
+  const [captureCounts, setCaptureCounts] = useState<Record<string, number>>({});
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
 
   const fetchProjects = async () => {
     if (!user) return;
     setLoading(true);
     const { data } = await supabase.from("projects").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
-    if (data) setProjects(data);
+    if (data) {
+      setProjects(data);
+      // Fetch capture counts per project
+      const counts: Record<string, number> = {};
+      for (const p of data) {
+        const { count } = await supabase.from("capture_jobs").select("id", { count: "exact", head: true }).eq("project_id", p.id);
+        counts[p.id] = count || 0;
+      }
+      setCaptureCounts(counts);
+    }
     setLoading(false);
   };
 
@@ -38,6 +50,19 @@ const Projects = () => {
     if (error) toast.error(error.message);
     else { toast.success("Project created"); setNewName(""); fetchProjects(); }
     setCreating(false);
+  };
+
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase.from("projects").delete().eq("id", id);
+    if (error) toast.error(error.message);
+    else { toast.success("Project deleted"); fetchProjects(); }
+  };
+
+  const handleRename = async (id: string) => {
+    if (!editName.trim()) return;
+    const { error } = await supabase.from("projects").update({ name: editName.trim() }).eq("id", id);
+    if (error) toast.error(error.message);
+    else { toast.success("Project renamed"); setEditingId(null); fetchProjects(); }
   };
 
   return (
@@ -64,11 +89,36 @@ const Projects = () => {
           <div className="space-y-3">
             {projects.map((p) => (
               <div key={p.id} className="p-4 rounded-xl border bg-card flex items-center justify-between">
-                <div>
-                  <p className="font-medium">{p.name}</p>
-                  {p.description && <p className="text-sm text-muted-foreground">{p.description}</p>}
-                  <p className="text-xs text-muted-foreground mt-1">{new Date(p.created_at).toLocaleDateString()}</p>
+                <div className="flex-1 min-w-0">
+                  {editingId === p.id ? (
+                    <div className="flex items-center gap-2">
+                      <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="h-8 text-sm" onKeyDown={(e) => e.key === "Enter" && handleRename(p.id)} />
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleRename(p.id)}><Check className="w-3.5 h-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingId(null)}><X className="w-3.5 h-3.5" /></Button>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="font-medium">{p.name}</p>
+                      {p.description && <p className="text-sm text-muted-foreground">{p.description}</p>}
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</span>
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Image className="w-3 h-3" /> {captureCounts[p.id] || 0} captures
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
+                {editingId !== p.id && (
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingId(p.id); setEditName(p.name); }} title="Rename">
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(p.id)} title="Delete">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

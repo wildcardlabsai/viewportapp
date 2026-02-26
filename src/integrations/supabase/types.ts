@@ -132,6 +132,7 @@ export type Database = {
           background: string
           completed_at: string | null
           created_at: string
+          custom_css: string | null
           delay_seconds: number
           device_preset: string
           device_scale_factor: number
@@ -156,6 +157,7 @@ export type Database = {
           background?: string
           completed_at?: string | null
           created_at?: string
+          custom_css?: string | null
           delay_seconds?: number
           device_preset?: string
           device_scale_factor?: number
@@ -180,6 +182,7 @@ export type Database = {
           background?: string
           completed_at?: string | null
           created_at?: string
+          custom_css?: string | null
           delay_seconds?: number
           device_preset?: string
           device_scale_factor?: number
@@ -286,6 +289,62 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scheduled_captures: {
+        Row: {
+          capture_options: Json
+          created_at: string
+          cron_expression: string
+          device_preset: string
+          id: string
+          is_active: boolean
+          last_run_at: string | null
+          next_run_at: string
+          project_id: string | null
+          url: string
+          user_id: string
+          viewport_height: number
+          viewport_width: number
+        }
+        Insert: {
+          capture_options?: Json
+          created_at?: string
+          cron_expression?: string
+          device_preset?: string
+          id?: string
+          is_active?: boolean
+          last_run_at?: string | null
+          next_run_at?: string
+          project_id?: string | null
+          url: string
+          user_id: string
+          viewport_height?: number
+          viewport_width?: number
+        }
+        Update: {
+          capture_options?: Json
+          created_at?: string
+          cron_expression?: string
+          device_preset?: string
+          id?: string
+          is_active?: boolean
+          last_run_at?: string | null
+          next_run_at?: string
+          project_id?: string | null
+          url?: string
+          user_id?: string
+          viewport_height?: number
+          viewport_width?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_captures_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
