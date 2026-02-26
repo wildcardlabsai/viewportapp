@@ -9,6 +9,8 @@ const navItems = [
   { icon: Camera, label: "New Capture", path: "/dashboard" },
   { icon: History, label: "History", path: "/history" },
   { icon: FolderOpen, label: "Projects", path: "/projects" },
+  { icon: Clock, label: "Schedules", path: "/schedules" },
+  { icon: Users, label: "Team", path: "/team" },
   { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
