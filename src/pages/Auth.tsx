@@ -18,6 +18,29 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
+
+  const handleDemoSignIn = async () => {
+    setDemoLoading(true);
+    const demoEmail = "demo@viewport-app.com";
+    const demoPassword = "demo123456";
+
+    // Try sign in first, if fails create the account then sign in
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: demoEmail,
+      password: demoPassword,
+    });
+
+    if (signInError) {
+      await supabase.auth.signUp({ email: demoEmail, password: demoPassword });
+      const { error } = await supabase.auth.signInWithPassword({
+        email: demoEmail,
+        password: demoPassword,
+      });
+      if (error) toast.error("Demo sign-in failed: " + error.message);
+    }
+    setDemoLoading(false);
+  };
 
   if (loading) {
     return (
@@ -210,6 +233,21 @@ const Auth = () => {
             </p>
           </form>
         )}
+
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center"><div className="w-full border-t" /></div>
+          <div className="relative flex justify-center text-xs"><span className="bg-background px-2 text-muted-foreground">or</span></div>
+        </div>
+
+        <Button
+          variant="outline"
+          className="w-full h-11"
+          onClick={handleDemoSignIn}
+          disabled={demoLoading}
+        >
+          {demoLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+          🚀 Sign in as Demo User
+        </Button>
 
         <p className="text-center text-xs text-muted-foreground mt-6">
           By continuing, you agree to our Terms of Service and Privacy Policy.
