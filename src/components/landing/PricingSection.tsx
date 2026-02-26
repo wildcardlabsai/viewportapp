@@ -49,7 +49,7 @@ const plans = [
   {
     name: "Agency",
     key: "agency",
-    price: "$79",
+    price: "$39.99",
     period: "/month",
     description: "For teams and automation",
     features: [

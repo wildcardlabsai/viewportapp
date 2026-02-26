@@ -62,8 +62,8 @@ serve(async (req) => {
 
     // Map product ID to plan
     let plan = "free";
-    if (productId === "prod_U3ITIgS9qPi6Hk") plan = "pro";
-    else if (productId === "prod_U3IT1WWys4rZBy") plan = "agency";
+    if (productId === "prod_U3IYBxyZau1qRK") plan = "pro";
+    else if (productId === "prod_U3IYy9ARBh0z8Y") plan = "agency";
 
     // Sync plan to profiles table
     await supabaseClient.from("profiles").update({ plan }).eq("user_id", user.id);

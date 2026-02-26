@@ -4,12 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const PLAN_TIERS = {
   pro: {
-    price_id: "price_1T5Bs6DQGohKvUIbolaeDMEO",
-    product_id: "prod_U3ITIgS9qPi6Hk",
+    price_id: "price_1T5Bx6DQGohKvUIb6ytCwCJK",
+    product_id: "prod_U3IYBxyZau1qRK",
   },
   agency: {
-    price_id: "price_1T5BsWDQGohKvUIbJ4hxwbrx",
-    product_id: "prod_U3IT1WWys4rZBy",
+    price_id: "price_1T5BxBDQGohKvUIbYKGkPqg2",
+    product_id: "prod_U3IYy9ARBh0z8Y",
   },
 } as const;
 
