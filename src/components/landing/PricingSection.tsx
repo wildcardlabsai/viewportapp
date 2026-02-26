@@ -12,7 +12,7 @@ const plans = [
     features: [
       "10 screenshots per day",
       "1x resolution",
-      "Viewport-only capture",
+      "Standard capture",
       "PNG & JPG export",
       "Basic history",
     ],

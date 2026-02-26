@@ -84,7 +84,7 @@ const Hero = () => {
                 </div>
                 <div className="flex-1 flex justify-center">
                   <div className="px-4 py-1 bg-background rounded-md text-xs text-muted-foreground w-64 text-center">
-                    app.pageframe.dev
+                    app.pageframe.app
                   </div>
                 </div>
               </div>

@@ -24,7 +24,7 @@ const Auth = () => {
 
   const handleDemoSignIn = async () => {
     setDemoLoading(true);
-    const demoEmail = "demo@viewport-app.com";
+    const demoEmail = "demo@pageframe.app";
     const demoPassword = "demo123456";
     const { error: signInError } = await supabase.auth.signInWithPassword({ email: demoEmail, password: demoPassword });
     if (signInError) {
