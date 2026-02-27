@@ -210,7 +210,6 @@ const MockupDialog = ({ open, onOpenChange, imageUrl }: MockupDialogProps) => {
 
   const handleDeviceChange = useCallback((d: DeviceType) => {
     setDevice(d);
-    if (!supportsOrientation(d)) setOrientation("portrait");
     resetView();
   }, [resetView]);
 
