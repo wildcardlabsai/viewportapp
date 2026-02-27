@@ -246,9 +246,11 @@ const History = () => {
       </div>
 
       <MockupDialog
-        open={!!mockupAssetUrl}
-        onOpenChange={(open) => !open && setMockupAssetUrl(null)}
-        imageUrl={mockupAssetUrl ?? ""}
+        open={!!mockupData}
+        onOpenChange={(open) => !open && setMockupData(null)}
+        imageUrl={mockupData?.imageUrl ?? ""}
+        sourceUrl={mockupData?.sourceUrl}
+        userId={user?.id}
       />
 
       <AnnotationEditor
