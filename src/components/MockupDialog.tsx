@@ -195,7 +195,7 @@ const imageMaxWidths: Record<DeviceType, string> = {
 const MockupDialog = ({ open, onOpenChange, imageUrl }: MockupDialogProps) => {
   const [device, setDevice] = useState<DeviceType>("macbook");
   const [bg, setBg] = useState<BgStyle>("gradient");
-  const [orientation, setOrientation] = useState<Orientation>("portrait");
+  
   const [zoom, setZoom] = useState(1);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [downloading, setDownloading] = useState(false);
