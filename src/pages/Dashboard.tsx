@@ -64,12 +64,19 @@ const Dashboard = () => {
     );
   };
 
+  const normalizeUrl = (u: string): string => {
+    u = u.trim();
+    if (u && !/^https?:\/\//i.test(u)) u = `https://${u}`;
+    return u;
+  };
+
   const getUrls = (): string[] => {
-    if (inputMode === "single") return url.trim() ? [url.trim()] : [];
+    if (inputMode === "single") return url.trim() ? [normalizeUrl(url)] : [];
     return bulkUrls
       .split(/[\n,]+/)
       .map((u) => u.trim())
-      .filter((u) => u.length > 0);
+      .filter((u) => u.length > 0)
+      .map(normalizeUrl);
   };
 
   const handleCapture = async () => {
