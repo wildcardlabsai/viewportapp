@@ -70,7 +70,7 @@ const SharedCapture = () => {
   if (error) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
-        <img src={pageframeLogo} alt="PageFrame" className="h-8 mb-2" />
+        <img src={pageframeLogo} alt="PageFrame" className="h-8 mb-2 cursor-pointer" onClick={() => navigate("/")} />
         <p className="text-lg font-medium text-foreground">{error}</p>
         <p className="text-sm text-muted-foreground">The capture you're looking for doesn't exist or is no longer available.</p>
       </div>
