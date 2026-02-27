@@ -74,7 +74,7 @@ const DashboardLayout = ({ children, active }: { children: ReactNode; active: st
       {/* Mobile header + sheet */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="lg:hidden flex items-center justify-between p-3 border-b bg-card">
-          <img src={pageframeLogo} alt="PageFrame" className="h-6" />
+          <img src={pageframeLogo} alt="PageFrame" className="h-6 cursor-pointer" onClick={() => navigate("/dashboard")} />
           <Button variant="ghost" size="icon" onClick={() => setMobileOpen(!mobileOpen)}>
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </Button>
