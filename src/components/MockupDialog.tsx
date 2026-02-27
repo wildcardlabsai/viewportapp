@@ -1,6 +1,6 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { toPng } from "html-to-image";
-import { Download, Monitor, Smartphone, Tablet, Globe, RotateCcw } from "lucide-react";
+import { Download, Monitor, Smartphone, Tablet, Globe, RotateCcw, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -10,16 +10,18 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MockupDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   imageUrl: string;
+  sourceUrl?: string;
+  userId?: string;
 }
 
 type DeviceType = "macbook" | "iphone" | "ipad" | "browser";
 type BgStyle = "white" | "dark" | "gradient" | "brand";
-
 
 const devices: { id: DeviceType; label: string; icon: typeof Monitor }[] = [
   { id: "macbook", label: "MacBook", icon: Monitor },
@@ -27,6 +29,13 @@ const devices: { id: DeviceType; label: string; icon: typeof Monitor }[] = [
   { id: "ipad", label: "iPad", icon: Tablet },
   { id: "browser", label: "Browser", icon: Globe },
 ];
+
+const deviceViewports: Record<DeviceType, { width: number; height: number }> = {
+  macbook: { width: 1440, height: 900 },
+  iphone: { width: 390, height: 844 },
+  ipad: { width: 820, height: 1180 },
+  browser: { width: 1920, height: 1080 },
+};
 
 const backgrounds: { id: BgStyle; label: string; className: string }[] = [
   { id: "white", label: "White", className: "bg-white" },
@@ -42,9 +51,11 @@ interface InteractiveImageProps {
   zoom: number;
   panOffset: { x: number; y: number };
   onPanChange: (offset: { x: number; y: number }) => void;
+  loading?: boolean;
 }
 
-const InteractiveImage = ({ imageUrl, zoom, panOffset, onPanChange }: InteractiveImageProps) => {
+const InteractiveImage = ({ imageUrl, zoom, panOffset, onPanChange, loading }: InteractiveImageProps) => {
+  const containerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const dragStart = useRef({ x: 0, y: 0 });
   const panStart = useRef({ x: 0, y: 0 });
@@ -54,36 +65,55 @@ const InteractiveImage = ({ imageUrl, zoom, panOffset, onPanChange }: Interactiv
     isDragging.current = true;
     dragStart.current = { x: e.clientX, y: e.clientY };
     panStart.current = { ...panOffset };
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    e.preventDefault();
   }, [zoom, panOffset]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (!isDragging.current) return;
     const dx = e.clientX - dragStart.current.x;
     const dy = e.clientY - dragStart.current.y;
-    onPanChange({ x: panStart.current.x + dx / zoom, y: panStart.current.y + dy / zoom });
+    onPanChange({
+      x: panStart.current.x + dx / zoom,
+      y: panStart.current.y + dy / zoom,
+    });
   }, [zoom, onPanChange]);
 
   const handlePointerUp = useCallback(() => {
     isDragging.current = false;
   }, []);
 
+  if (loading) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-black/5" style={{ minHeight: 200 }}>
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          <span className="text-xs text-muted-foreground">Capturing…</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
-      className="w-full h-full overflow-hidden"
-      style={{ cursor: zoom > 1 ? "grab" : "default" }}
+      ref={containerRef}
+      className="w-full h-full overflow-hidden relative"
+      style={{ cursor: zoom > 1 ? (isDragging.current ? "grabbing" : "grab") : "default" }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
     >
       <img
         src={imageUrl}
         alt="Screenshot"
-        className="w-full h-auto block select-none pointer-events-none"
+        className="w-full h-full block select-none"
         crossOrigin="anonymous"
         draggable={false}
         style={{
-          transform: `scale(${zoom}) translate(${panOffset.x}px, ${panOffset.y}px)`,
+          objectFit: "cover",
+          objectPosition: "top center",
+          transform: zoom > 1 ? `scale(${zoom}) translate(${panOffset.x}px, ${panOffset.y}px)` : undefined,
           transformOrigin: "center center",
         }}
       />
@@ -162,26 +192,137 @@ const imageMaxWidths: Record<DeviceType, string> = {
 
 /* ── Main Component ── */
 
-const MockupDialog = ({ open, onOpenChange, imageUrl }: MockupDialogProps) => {
+const MockupDialog = ({ open, onOpenChange, imageUrl, sourceUrl, userId }: MockupDialogProps) => {
   const [device, setDevice] = useState<DeviceType>("macbook");
   const [bg, setBg] = useState<BgStyle>("gradient");
-  
   const [zoom, setZoom] = useState(1);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [downloading, setDownloading] = useState(false);
+  const [capturing, setCapturing] = useState(false);
+  const [deviceImages, setDeviceImages] = useState<Partial<Record<DeviceType, string>>>({});
   const containerRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const Frame = frameComponents[device];
+
+  // The active image: device-specific capture if available, otherwise fallback
+  const activeImage = deviceImages[device] ?? imageUrl;
 
   const resetView = useCallback(() => {
     setZoom(1);
     setPanOffset({ x: 0, y: 0 });
   }, []);
 
+  // Capture a screenshot for the selected device viewport
+  const captureForDevice = useCallback(async (d: DeviceType) => {
+    if (!sourceUrl || !userId) return;
+    if (deviceImages[d]) return; // Already captured
+
+    setCapturing(true);
+    try {
+      // Cancel any in-flight capture
+      abortRef.current?.abort();
+      abortRef.current = new AbortController();
+
+      const vp = deviceViewports[d];
+
+      // Create a capture job
+      const { data: job, error: insertErr } = await supabase
+        .from("capture_jobs")
+        .insert({
+          url: sourceUrl,
+          user_id: userId,
+          viewport_width: vp.width,
+          viewport_height: vp.height,
+          device_preset: d,
+          device_scale_factor: 2,
+          output_format: "png",
+          full_page: false,
+          status: "queued",
+          delay_seconds: 1,
+          hide_cookie_banners: true,
+          hide_chat_widgets: true,
+          hide_popups: true,
+          hide_sticky_headers: false,
+          background: "light",
+        })
+        .select()
+        .single();
+
+      if (insertErr || !job) throw insertErr ?? new Error("Failed to create job");
+
+      // Invoke the edge function
+      const { error: fnErr } = await supabase.functions.invoke("process-captures", {
+        body: { job_ids: [job.id] },
+      });
+      if (fnErr) throw fnErr;
+
+      // Poll for completion (max 30s)
+      const deadline = Date.now() + 30000;
+      let resultUrl: string | null = null;
+
+      while (Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 1500));
+        if (abortRef.current?.signal.aborted) return;
+
+        const { data: updated } = await supabase
+          .from("capture_jobs")
+          .select("status, error_message")
+          .eq("id", job.id)
+          .single();
+
+        if (updated?.status === "completed") {
+          const { data: asset } = await supabase
+            .from("capture_assets")
+            .select("file_url")
+            .eq("job_id", job.id)
+            .single();
+          resultUrl = asset?.file_url ?? null;
+          break;
+        }
+        if (updated?.status === "failed") {
+          throw new Error(updated.error_message ?? "Capture failed");
+        }
+      }
+
+      if (resultUrl) {
+        setDeviceImages((prev) => ({ ...prev, [d]: resultUrl }));
+      } else {
+        toast.error("Capture timed out");
+      }
+    } catch (err) {
+      if (!(err instanceof DOMException && err.name === "AbortError")) {
+        console.error("Mockup capture error:", err);
+        toast.error("Failed to capture for this device");
+      }
+    } finally {
+      setCapturing(false);
+    }
+  }, [sourceUrl, userId, deviceImages]);
+
   const handleDeviceChange = useCallback((d: DeviceType) => {
     setDevice(d);
     resetView();
-  }, [resetView]);
+    captureForDevice(d);
+  }, [resetView, captureForDevice]);
+
+  // Auto-capture on open for the default device
+  useEffect(() => {
+    if (open && sourceUrl && userId) {
+      setDeviceImages({});
+      captureForDevice("macbook");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, sourceUrl]);
+
+  // Cleanup on close
+  useEffect(() => {
+    if (!open) {
+      abortRef.current?.abort();
+      setDevice("macbook");
+      resetView();
+    }
+  }, [open, resetView]);
 
   const handleDownload = async () => {
     if (!containerRef.current) return;
@@ -213,6 +354,7 @@ const MockupDialog = ({ open, onOpenChange, imageUrl }: MockupDialogProps) => {
   };
 
   const bgClass = backgrounds.find((b) => b.id === bg)?.className ?? "";
+  const isCapturing = capturing && !deviceImages[device];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -226,6 +368,7 @@ const MockupDialog = ({ open, onOpenChange, imageUrl }: MockupDialogProps) => {
           <div className="flex gap-1 p-1 rounded-lg bg-muted">
             {devices.map((d) => {
               const Icon = d.icon;
+              const hasCached = !!deviceImages[d.id];
               return (
                 <button
                   key={d.id}
@@ -238,6 +381,7 @@ const MockupDialog = ({ open, onOpenChange, imageUrl }: MockupDialogProps) => {
                 >
                   <Icon className="w-3.5 h-3.5" />
                   {d.label}
+                  {hasCached && <span className="w-1.5 h-1.5 rounded-full bg-green-500" />}
                 </button>
               );
             })}
@@ -258,8 +402,8 @@ const MockupDialog = ({ open, onOpenChange, imageUrl }: MockupDialogProps) => {
           </div>
 
           <div className="flex-1" />
-          <Button variant="outline" size="sm" onClick={handleDownloadPdf}>PDF</Button>
-          <Button size="sm" onClick={handleDownload} disabled={downloading}>
+          <Button variant="outline" size="sm" onClick={handleDownloadPdf} disabled={isCapturing}>PDF</Button>
+          <Button size="sm" onClick={handleDownload} disabled={downloading || isCapturing}>
             <Download className="w-4 h-4 mr-1" />
             {downloading ? "Exporting…" : "Download PNG"}
           </Button>
@@ -298,14 +442,21 @@ const MockupDialog = ({ open, onOpenChange, imageUrl }: MockupDialogProps) => {
           <div className={`${imageMaxWidths[device]} w-full`}>
             <Frame>
               <InteractiveImage
-                imageUrl={imageUrl}
+                imageUrl={activeImage}
                 zoom={zoom}
                 panOffset={panOffset}
                 onPanChange={setPanOffset}
+                loading={isCapturing}
               />
             </Frame>
           </div>
         </div>
+
+        {sourceUrl && (
+          <p className="text-xs text-muted-foreground text-center truncate">
+            {isCapturing ? "Generating device-specific screenshot…" : `Live preview for ${sourceUrl}`}
+          </p>
+        )}
       </DialogContent>
     </Dialog>
   );

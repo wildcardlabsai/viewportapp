@@ -51,7 +51,7 @@ const History = () => {
   const [jobs, setJobs] = useState<CaptureJob[]>([]);
   const [assets, setAssets] = useState<CaptureAsset[]>([]);
   const [loading, setLoading] = useState(true);
-  const [mockupAssetUrl, setMockupAssetUrl] = useState<string | null>(null);
+  const [mockupData, setMockupData] = useState<{ imageUrl: string; sourceUrl: string } | null>(null);
   const [annotateUrl, setAnnotateUrl] = useState<string | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [filterProject, setFilterProject] = useState<string>("all");
@@ -217,7 +217,7 @@ const History = () => {
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setAnnotateUrl(asset.file_url)} title="Annotate">
                               <Pencil className="w-4 h-4" />
                             </Button>
-                            <Button variant="outline" size="sm" className="h-8 gap-1 text-xs font-medium" onClick={() => setMockupAssetUrl(asset.file_url)}>
+                            <Button variant="outline" size="sm" className="h-8 gap-1 text-xs font-medium" onClick={() => setMockupData({ imageUrl: asset.file_url, sourceUrl: job.url })}>
                               <Monitor className="w-3.5 h-3.5" />
                               Mockup
                             </Button>
@@ -246,9 +246,11 @@ const History = () => {
       </div>
 
       <MockupDialog
-        open={!!mockupAssetUrl}
-        onOpenChange={(open) => !open && setMockupAssetUrl(null)}
-        imageUrl={mockupAssetUrl ?? ""}
+        open={!!mockupData}
+        onOpenChange={(open) => !open && setMockupData(null)}
+        imageUrl={mockupData?.imageUrl ?? ""}
+        sourceUrl={mockupData?.sourceUrl}
+        userId={user?.id}
       />
 
       <AnnotationEditor
