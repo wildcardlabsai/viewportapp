@@ -176,22 +176,19 @@ const BrowserFrame = ({ children }: { children: React.ReactNode }) => (
 
 /* ── Frame Selection ── */
 
-function getFrame(device: DeviceType, orientation: Orientation): React.FC<{ children: React.ReactNode }> {
-  if (device === "iphone") return orientation === "landscape" ? IPhoneLandscapeFrame : IPhonePortraitFrame;
-  if (device === "ipad") return orientation === "landscape" ? IPadLandscapeFrame : IPadPortraitFrame;
-  if (device === "browser") return BrowserFrame;
-  return MacBookFrame;
-}
+const frameComponents: Record<DeviceType, React.FC<{ children: React.ReactNode }>> = {
+  macbook: MacBookFrame,
+  iphone: IPhoneFrame,
+  ipad: IPadFrame,
+  browser: BrowserFrame,
+};
 
-function getMaxWidth(device: DeviceType, orientation: Orientation): string {
-  if (device === "macbook") return "max-w-[480px]";
-  if (device === "browser") return "max-w-[520px]";
-  if (device === "iphone") return orientation === "landscape" ? "max-w-[420px]" : "max-w-[220px]";
-  if (device === "ipad") return orientation === "landscape" ? "max-w-[480px]" : "max-w-[360px]";
-  return "max-w-[480px]";
-}
-
-const supportsOrientation = (d: DeviceType) => d === "iphone" || d === "ipad";
+const imageMaxWidths: Record<DeviceType, string> = {
+  macbook: "max-w-[480px]",
+  iphone: "max-w-[220px]",
+  ipad: "max-w-[340px]",
+  browser: "max-w-[520px]",
+};
 
 /* ── Main Component ── */
 
