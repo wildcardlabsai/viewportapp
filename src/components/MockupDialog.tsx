@@ -201,7 +201,7 @@ const MockupDialog = ({ open, onOpenChange, imageUrl }: MockupDialogProps) => {
   const [downloading, setDownloading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const Frame = getFrame(device, orientation);
+  const Frame = frameComponents[device];
 
   const resetView = useCallback(() => {
     setZoom(1);
