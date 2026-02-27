@@ -1,6 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { toPng } from "html-to-image";
-import { Download, Monitor, Smartphone, Tablet, Globe } from "lucide-react";
+import { Download, Monitor, Smartphone, Tablet, Globe, RotateCcw } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 
 interface MockupDialogProps {
@@ -18,6 +19,7 @@ interface MockupDialogProps {
 
 type DeviceType = "macbook" | "iphone" | "ipad" | "browser";
 type BgStyle = "white" | "dark" | "gradient" | "brand";
+type Orientation = "portrait" | "landscape";
 
 const devices: { id: DeviceType; label: string; icon: typeof Monitor }[] = [
   { id: "macbook", label: "MacBook", icon: Monitor },
@@ -33,54 +35,128 @@ const backgrounds: { id: BgStyle; label: string; className: string }[] = [
   { id: "brand", label: "Subtle", className: "bg-gradient-to-br from-[hsl(262,83%,58%,0.1)] to-[hsl(195,100%,50%,0.1)]" },
 ];
 
+/* ── Interactive Image ── */
+
+interface InteractiveImageProps {
+  imageUrl: string;
+  zoom: number;
+  panOffset: { x: number; y: number };
+  onPanChange: (offset: { x: number; y: number }) => void;
+}
+
+const InteractiveImage = ({ imageUrl, zoom, panOffset, onPanChange }: InteractiveImageProps) => {
+  const isDragging = useRef(false);
+  const dragStart = useRef({ x: 0, y: 0 });
+  const panStart = useRef({ x: 0, y: 0 });
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    if (zoom <= 1) return;
+    isDragging.current = true;
+    dragStart.current = { x: e.clientX, y: e.clientY };
+    panStart.current = { ...panOffset };
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  }, [zoom, panOffset]);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!isDragging.current) return;
+    const dx = e.clientX - dragStart.current.x;
+    const dy = e.clientY - dragStart.current.y;
+    onPanChange({ x: panStart.current.x + dx / zoom, y: panStart.current.y + dy / zoom });
+  }, [zoom, onPanChange]);
+
+  const handlePointerUp = useCallback(() => {
+    isDragging.current = false;
+  }, []);
+
+  return (
+    <div
+      className="w-full h-full overflow-hidden"
+      style={{ cursor: zoom > 1 ? "grab" : "default" }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+    >
+      <img
+        src={imageUrl}
+        alt="Screenshot"
+        className="w-full h-auto block select-none pointer-events-none"
+        crossOrigin="anonymous"
+        draggable={false}
+        style={{
+          transform: `scale(${zoom}) translate(${panOffset.x}px, ${panOffset.y}px)`,
+          transformOrigin: "center center",
+        }}
+      />
+    </div>
+  );
+};
+
 /* ── Device Frames ── */
 
 const MacBookFrame = ({ children }: { children: React.ReactNode }) => (
   <div className="flex flex-col items-center">
-    {/* Screen bezel */}
     <div className="relative rounded-t-[12px] border-[10px] border-[hsl(230,5%,15%)] bg-[hsl(230,5%,15%)] shadow-[0_0_0_1px_hsl(230,5%,25%),0_20px_60px_-10px_rgba(0,0,0,0.5)]">
-      {/* Camera dot */}
       <div className="absolute top-[-6px] left-1/2 -translate-x-1/2 w-[6px] h-[6px] rounded-full bg-[hsl(230,5%,25%)] z-10" />
       <div className="rounded-[2px] overflow-hidden">{children}</div>
     </div>
-    {/* Hinge */}
     <div className="w-[18%] h-[8px] bg-gradient-to-b from-[hsl(230,5%,15%)] to-[hsl(230,5%,20%)]" style={{ borderRadius: "0 0 2px 2px" }} />
-    {/* Base */}
     <div className="w-[108%] h-[8px] bg-gradient-to-b from-[hsl(220,8%,82%)] via-[hsl(220,8%,78%)] to-[hsl(220,8%,72%)] rounded-b-md shadow-[0_2px_8px_rgba(0,0,0,0.15)]" />
     <div className="w-[110%] h-[2px] bg-gradient-to-b from-[hsl(220,8%,68%)] to-[hsl(220,8%,65%)] rounded-b-lg" />
   </div>
 );
 
-const IPhoneFrame = ({ children }: { children: React.ReactNode }) => (
+// iPhone Portrait
+const IPhonePortraitFrame = ({ children }: { children: React.ReactNode }) => (
   <div className="relative rounded-[3rem] bg-[hsl(230,5%,12%)] shadow-[0_0_0_2px_hsl(230,5%,22%),0_0_0_3px_hsl(230,5%,8%),0_20px_60px_-10px_rgba(0,0,0,0.5)] p-[10px]">
-    {/* Side buttons - volume */}
     <div className="absolute left-[-3px] top-[22%] w-[3px] h-[20px] bg-[hsl(230,5%,18%)] rounded-l-sm" />
     <div className="absolute left-[-3px] top-[30%] w-[3px] h-[30px] bg-[hsl(230,5%,18%)] rounded-l-sm" />
     <div className="absolute left-[-3px] top-[38%] w-[3px] h-[30px] bg-[hsl(230,5%,18%)] rounded-l-sm" />
-    {/* Power button */}
     <div className="absolute right-[-3px] top-[28%] w-[3px] h-[36px] bg-[hsl(230,5%,18%)] rounded-r-sm" />
-    {/* Dynamic Island */}
     <div className="absolute top-[14px] left-1/2 -translate-x-1/2 w-[25%] h-[14px] bg-[hsl(230,5%,5%)] rounded-full z-10" />
-    {/* Screen */}
     <div className="rounded-[2.2rem] overflow-hidden bg-black">{children}</div>
-    {/* Home indicator */}
     <div className="absolute bottom-[6px] left-1/2 -translate-x-1/2 w-[30%] h-[4px] bg-white/20 rounded-full" />
   </div>
 );
 
-const IPadFrame = ({ children }: { children: React.ReactNode }) => (
+// iPhone Landscape
+const IPhoneLandscapeFrame = ({ children }: { children: React.ReactNode }) => (
+  <div className="relative rounded-[3rem] bg-[hsl(230,5%,12%)] shadow-[0_0_0_2px_hsl(230,5%,22%),0_0_0_3px_hsl(230,5%,8%),0_20px_60px_-10px_rgba(0,0,0,0.5)] p-[10px]">
+    {/* Buttons on top */}
+    <div className="absolute top-[-3px] left-[22%] h-[3px] w-[20px] bg-[hsl(230,5%,18%)] rounded-t-sm" />
+    <div className="absolute top-[-3px] left-[30%] h-[3px] w-[30px] bg-[hsl(230,5%,18%)] rounded-t-sm" />
+    <div className="absolute top-[-3px] left-[38%] h-[3px] w-[30px] bg-[hsl(230,5%,18%)] rounded-t-sm" />
+    {/* Power on bottom */}
+    <div className="absolute bottom-[-3px] left-[28%] h-[3px] w-[36px] bg-[hsl(230,5%,18%)] rounded-b-sm" />
+    {/* Dynamic Island on right */}
+    <div className="absolute right-[14px] top-1/2 -translate-y-1/2 h-[25%] w-[14px] bg-[hsl(230,5%,5%)] rounded-full z-10" />
+    <div className="rounded-[2.2rem] overflow-hidden bg-black">{children}</div>
+    {/* Home indicator on left */}
+    <div className="absolute left-[6px] top-1/2 -translate-y-1/2 h-[30%] w-[4px] bg-white/20 rounded-full" />
+  </div>
+);
+
+// iPad Portrait
+const IPadPortraitFrame = ({ children }: { children: React.ReactNode }) => (
   <div className="relative rounded-[1.2rem] bg-[hsl(230,5%,12%)] shadow-[0_0_0_2px_hsl(230,5%,22%),0_0_0_3px_hsl(230,5%,8%),0_20px_60px_-10px_rgba(0,0,0,0.5)] p-[10px]">
-    {/* Camera */}
     <div className="absolute top-[10px] left-1/2 -translate-x-1/2 w-[5px] h-[5px] rounded-full bg-[hsl(230,5%,25%)] z-10" />
     <div className="rounded-[6px] overflow-hidden">{children}</div>
-    {/* Home indicator */}
     <div className="absolute bottom-[6px] left-1/2 -translate-x-1/2 w-[18%] h-[4px] bg-white/15 rounded-full" />
+  </div>
+);
+
+// iPad Landscape
+const IPadLandscapeFrame = ({ children }: { children: React.ReactNode }) => (
+  <div className="relative rounded-[1.2rem] bg-[hsl(230,5%,12%)] shadow-[0_0_0_2px_hsl(230,5%,22%),0_0_0_3px_hsl(230,5%,8%),0_20px_60px_-10px_rgba(0,0,0,0.5)] p-[10px]">
+    {/* Camera on right side */}
+    <div className="absolute right-[10px] top-1/2 -translate-y-1/2 w-[5px] h-[5px] rounded-full bg-[hsl(230,5%,25%)] z-10" />
+    <div className="rounded-[6px] overflow-hidden">{children}</div>
+    {/* Home indicator on bottom */}
+    <div className="absolute bottom-[6px] left-1/2 -translate-x-1/2 w-[12%] h-[4px] bg-white/15 rounded-full" />
   </div>
 );
 
 const BrowserFrame = ({ children }: { children: React.ReactNode }) => (
   <div className="rounded-xl bg-[hsl(220,14%,96%)] shadow-[0_0_0_1px_hsl(220,13%,88%),0_20px_60px_-10px_rgba(0,0,0,0.3)] overflow-hidden">
-    {/* Title bar */}
     <div className="flex items-center gap-2 px-4 py-2 bg-[hsl(220,14%,96%)] border-b border-[hsl(220,13%,88%)]">
       <div className="flex gap-[6px]">
         <div className="w-[12px] h-[12px] rounded-full bg-[#ff5f57] shadow-[inset_0_-1px_1px_rgba(0,0,0,0.1)]" />
@@ -94,32 +170,52 @@ const BrowserFrame = ({ children }: { children: React.ReactNode }) => (
         </div>
       </div>
     </div>
-    {/* Content */}
     <div className="bg-white">{children}</div>
   </div>
 );
 
-const frameComponents: Record<DeviceType, React.FC<{ children: React.ReactNode }>> = {
-  macbook: MacBookFrame,
-  iphone: IPhoneFrame,
-  ipad: IPadFrame,
-  browser: BrowserFrame,
-};
+/* ── Frame Selection ── */
 
-const imageMaxWidths: Record<DeviceType, string> = {
-  macbook: "max-w-[480px]",
-  iphone: "max-w-[220px]",
-  ipad: "max-w-[360px]",
-  browser: "max-w-[520px]",
-};
+function getFrame(device: DeviceType, orientation: Orientation): React.FC<{ children: React.ReactNode }> {
+  if (device === "iphone") return orientation === "landscape" ? IPhoneLandscapeFrame : IPhonePortraitFrame;
+  if (device === "ipad") return orientation === "landscape" ? IPadLandscapeFrame : IPadPortraitFrame;
+  if (device === "browser") return BrowserFrame;
+  return MacBookFrame;
+}
+
+function getMaxWidth(device: DeviceType, orientation: Orientation): string {
+  if (device === "macbook") return "max-w-[480px]";
+  if (device === "browser") return "max-w-[520px]";
+  if (device === "iphone") return orientation === "landscape" ? "max-w-[420px]" : "max-w-[220px]";
+  if (device === "ipad") return orientation === "landscape" ? "max-w-[480px]" : "max-w-[360px]";
+  return "max-w-[480px]";
+}
+
+const supportsOrientation = (d: DeviceType) => d === "iphone" || d === "ipad";
+
+/* ── Main Component ── */
 
 const MockupDialog = ({ open, onOpenChange, imageUrl }: MockupDialogProps) => {
   const [device, setDevice] = useState<DeviceType>("macbook");
   const [bg, setBg] = useState<BgStyle>("gradient");
+  const [orientation, setOrientation] = useState<Orientation>("portrait");
+  const [zoom, setZoom] = useState(1);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [downloading, setDownloading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const Frame = frameComponents[device];
+  const Frame = getFrame(device, orientation);
+
+  const resetView = useCallback(() => {
+    setZoom(1);
+    setPanOffset({ x: 0, y: 0 });
+  }, []);
+
+  const handleDeviceChange = useCallback((d: DeviceType) => {
+    setDevice(d);
+    if (!supportsOrientation(d)) setOrientation("portrait");
+    resetView();
+  }, [resetView]);
 
   const handleDownload = async () => {
     if (!containerRef.current) return;
@@ -159,16 +255,15 @@ const MockupDialog = ({ open, onOpenChange, imageUrl }: MockupDialogProps) => {
           <DialogTitle>Device Mockup</DialogTitle>
         </DialogHeader>
 
-        {/* Controls */}
+        {/* Controls row 1: Device + Background + Export */}
         <div className="flex flex-wrap gap-4 items-center">
-          {/* Device picker */}
           <div className="flex gap-1 p-1 rounded-lg bg-muted">
             {devices.map((d) => {
               const Icon = d.icon;
               return (
                 <button
                   key={d.id}
-                  onClick={() => setDevice(d.id)}
+                  onClick={() => handleDeviceChange(d.id)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                     device === d.id
                       ? "bg-background text-foreground shadow-sm"
@@ -182,7 +277,6 @@ const MockupDialog = ({ open, onOpenChange, imageUrl }: MockupDialogProps) => {
             })}
           </div>
 
-          {/* Background picker */}
           <div className="flex gap-2 items-center">
             <span className="text-xs text-muted-foreground">BG:</span>
             {backgrounds.map((b) => (
@@ -198,14 +292,54 @@ const MockupDialog = ({ open, onOpenChange, imageUrl }: MockupDialogProps) => {
           </div>
 
           <div className="flex-1" />
-          <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
-            PDF
-          </Button>
+          <Button variant="outline" size="sm" onClick={handleDownloadPdf}>PDF</Button>
           <Button size="sm" onClick={handleDownload} disabled={downloading}>
             <Download className="w-4 h-4 mr-1" />
             {downloading ? "Exporting…" : "Download PNG"}
           </Button>
         </div>
+
+        {/* Controls row 2: Orientation + Zoom */}
+        <div className="flex flex-wrap gap-4 items-center">
+          {supportsOrientation(device) && (
+            <div className="flex gap-1 p-1 rounded-lg bg-muted">
+              {(["portrait", "landscape"] as const).map((o) => (
+                <button
+                  key={o}
+                  onClick={() => { setOrientation(o); resetView(); }}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                    orientation === o
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {o === "portrait" ? "Portrait" : "Landscape"}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center gap-3 flex-1 min-w-[180px]">
+            <span className="text-xs text-muted-foreground whitespace-nowrap">Zoom {zoom.toFixed(1)}x</span>
+            <Slider
+              min={1}
+              max={3}
+              step={0.1}
+              value={[zoom]}
+              onValueChange={([v]) => setZoom(v)}
+              className="flex-1"
+            />
+          </div>
+
+          <Button variant="ghost" size="sm" onClick={resetView} className="h-8 gap-1 text-xs">
+            <RotateCcw className="w-3.5 h-3.5" />
+            Reset
+          </Button>
+        </div>
+
+        {zoom > 1 && (
+          <p className="text-xs text-muted-foreground -mt-2">Drag the image to reposition</p>
+        )}
 
         {/* Preview */}
         <div
@@ -213,13 +347,13 @@ const MockupDialog = ({ open, onOpenChange, imageUrl }: MockupDialogProps) => {
           className={`flex items-center justify-center p-12 rounded-xl ${bgClass}`}
           style={{ minHeight: 320 }}
         >
-          <div className={`${imageMaxWidths[device]} w-full`}>
+          <div className={`${getMaxWidth(device, orientation)} w-full`}>
             <Frame>
-              <img
-                src={imageUrl}
-                alt="Screenshot"
-                className="w-full h-auto block"
-                crossOrigin="anonymous"
+              <InteractiveImage
+                imageUrl={imageUrl}
+                zoom={zoom}
+                panOffset={panOffset}
+                onPanChange={setPanOffset}
               />
             </Frame>
           </div>
