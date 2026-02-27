@@ -19,7 +19,7 @@ interface MockupDialogProps {
 
 type DeviceType = "macbook" | "iphone" | "ipad" | "browser";
 type BgStyle = "white" | "dark" | "gradient" | "brand";
-type Orientation = "portrait" | "landscape";
+
 
 const devices: { id: DeviceType; label: string; icon: typeof Monitor }[] = [
   { id: "macbook", label: "MacBook", icon: Monitor },
@@ -105,53 +105,23 @@ const MacBookFrame = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
-// iPhone Portrait
-const IPhonePortraitFrame = ({ children }: { children: React.ReactNode }) => (
-  <div className="relative rounded-[3rem] bg-[hsl(230,5%,12%)] shadow-[0_0_0_2px_hsl(230,5%,22%),0_0_0_3px_hsl(230,5%,8%),0_20px_60px_-10px_rgba(0,0,0,0.5)] p-[10px]">
+const IPhoneFrame = ({ children }: { children: React.ReactNode }) => (
+  <div className="relative rounded-[3rem] bg-[hsl(230,5%,12%)] shadow-[0_0_0_2px_hsl(230,5%,22%),0_0_0_3px_hsl(230,5%,8%),0_20px_60px_-10px_rgba(0,0,0,0.5)] p-[10px]" style={{ aspectRatio: "9/19.5" }}>
     <div className="absolute left-[-3px] top-[22%] w-[3px] h-[20px] bg-[hsl(230,5%,18%)] rounded-l-sm" />
     <div className="absolute left-[-3px] top-[30%] w-[3px] h-[30px] bg-[hsl(230,5%,18%)] rounded-l-sm" />
     <div className="absolute left-[-3px] top-[38%] w-[3px] h-[30px] bg-[hsl(230,5%,18%)] rounded-l-sm" />
     <div className="absolute right-[-3px] top-[28%] w-[3px] h-[36px] bg-[hsl(230,5%,18%)] rounded-r-sm" />
     <div className="absolute top-[14px] left-1/2 -translate-x-1/2 w-[25%] h-[14px] bg-[hsl(230,5%,5%)] rounded-full z-10" />
-    <div className="rounded-[2.2rem] overflow-hidden bg-black">{children}</div>
+    <div className="rounded-[2.2rem] overflow-hidden bg-black w-full h-full">{children}</div>
     <div className="absolute bottom-[6px] left-1/2 -translate-x-1/2 w-[30%] h-[4px] bg-white/20 rounded-full" />
   </div>
 );
 
-// iPhone Landscape
-const IPhoneLandscapeFrame = ({ children }: { children: React.ReactNode }) => (
-  <div className="relative rounded-[3rem] bg-[hsl(230,5%,12%)] shadow-[0_0_0_2px_hsl(230,5%,22%),0_0_0_3px_hsl(230,5%,8%),0_20px_60px_-10px_rgba(0,0,0,0.5)] p-[10px]">
-    {/* Buttons on top */}
-    <div className="absolute top-[-3px] left-[22%] h-[3px] w-[20px] bg-[hsl(230,5%,18%)] rounded-t-sm" />
-    <div className="absolute top-[-3px] left-[30%] h-[3px] w-[30px] bg-[hsl(230,5%,18%)] rounded-t-sm" />
-    <div className="absolute top-[-3px] left-[38%] h-[3px] w-[30px] bg-[hsl(230,5%,18%)] rounded-t-sm" />
-    {/* Power on bottom */}
-    <div className="absolute bottom-[-3px] left-[28%] h-[3px] w-[36px] bg-[hsl(230,5%,18%)] rounded-b-sm" />
-    {/* Dynamic Island on right */}
-    <div className="absolute right-[14px] top-1/2 -translate-y-1/2 h-[25%] w-[14px] bg-[hsl(230,5%,5%)] rounded-full z-10" />
-    <div className="rounded-[2.2rem] overflow-hidden bg-black">{children}</div>
-    {/* Home indicator on left */}
-    <div className="absolute left-[6px] top-1/2 -translate-y-1/2 h-[30%] w-[4px] bg-white/20 rounded-full" />
-  </div>
-);
-
-// iPad Portrait
-const IPadPortraitFrame = ({ children }: { children: React.ReactNode }) => (
-  <div className="relative rounded-[1.2rem] bg-[hsl(230,5%,12%)] shadow-[0_0_0_2px_hsl(230,5%,22%),0_0_0_3px_hsl(230,5%,8%),0_20px_60px_-10px_rgba(0,0,0,0.5)] p-[10px]">
+const IPadFrame = ({ children }: { children: React.ReactNode }) => (
+  <div className="relative rounded-[1.2rem] bg-[hsl(230,5%,12%)] shadow-[0_0_0_2px_hsl(230,5%,22%),0_0_0_3px_hsl(230,5%,8%),0_20px_60px_-10px_rgba(0,0,0,0.5)] p-[10px]" style={{ aspectRatio: "3/4" }}>
     <div className="absolute top-[10px] left-1/2 -translate-x-1/2 w-[5px] h-[5px] rounded-full bg-[hsl(230,5%,25%)] z-10" />
-    <div className="rounded-[6px] overflow-hidden">{children}</div>
+    <div className="rounded-[6px] overflow-hidden w-full h-full">{children}</div>
     <div className="absolute bottom-[6px] left-1/2 -translate-x-1/2 w-[18%] h-[4px] bg-white/15 rounded-full" />
-  </div>
-);
-
-// iPad Landscape
-const IPadLandscapeFrame = ({ children }: { children: React.ReactNode }) => (
-  <div className="relative rounded-[1.2rem] bg-[hsl(230,5%,12%)] shadow-[0_0_0_2px_hsl(230,5%,22%),0_0_0_3px_hsl(230,5%,8%),0_20px_60px_-10px_rgba(0,0,0,0.5)] p-[10px]">
-    {/* Camera on right side */}
-    <div className="absolute right-[10px] top-1/2 -translate-y-1/2 w-[5px] h-[5px] rounded-full bg-[hsl(230,5%,25%)] z-10" />
-    <div className="rounded-[6px] overflow-hidden">{children}</div>
-    {/* Home indicator on bottom */}
-    <div className="absolute bottom-[6px] left-1/2 -translate-x-1/2 w-[12%] h-[4px] bg-white/15 rounded-full" />
   </div>
 );
 
@@ -176,35 +146,32 @@ const BrowserFrame = ({ children }: { children: React.ReactNode }) => (
 
 /* ── Frame Selection ── */
 
-function getFrame(device: DeviceType, orientation: Orientation): React.FC<{ children: React.ReactNode }> {
-  if (device === "iphone") return orientation === "landscape" ? IPhoneLandscapeFrame : IPhonePortraitFrame;
-  if (device === "ipad") return orientation === "landscape" ? IPadLandscapeFrame : IPadPortraitFrame;
-  if (device === "browser") return BrowserFrame;
-  return MacBookFrame;
-}
+const frameComponents: Record<DeviceType, React.FC<{ children: React.ReactNode }>> = {
+  macbook: MacBookFrame,
+  iphone: IPhoneFrame,
+  ipad: IPadFrame,
+  browser: BrowserFrame,
+};
 
-function getMaxWidth(device: DeviceType, orientation: Orientation): string {
-  if (device === "macbook") return "max-w-[480px]";
-  if (device === "browser") return "max-w-[520px]";
-  if (device === "iphone") return orientation === "landscape" ? "max-w-[420px]" : "max-w-[220px]";
-  if (device === "ipad") return orientation === "landscape" ? "max-w-[480px]" : "max-w-[360px]";
-  return "max-w-[480px]";
-}
-
-const supportsOrientation = (d: DeviceType) => d === "iphone" || d === "ipad";
+const imageMaxWidths: Record<DeviceType, string> = {
+  macbook: "max-w-[480px]",
+  iphone: "max-w-[220px]",
+  ipad: "max-w-[340px]",
+  browser: "max-w-[520px]",
+};
 
 /* ── Main Component ── */
 
 const MockupDialog = ({ open, onOpenChange, imageUrl }: MockupDialogProps) => {
   const [device, setDevice] = useState<DeviceType>("macbook");
   const [bg, setBg] = useState<BgStyle>("gradient");
-  const [orientation, setOrientation] = useState<Orientation>("portrait");
+  
   const [zoom, setZoom] = useState(1);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [downloading, setDownloading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const Frame = getFrame(device, orientation);
+  const Frame = frameComponents[device];
 
   const resetView = useCallback(() => {
     setZoom(1);
@@ -213,7 +180,6 @@ const MockupDialog = ({ open, onOpenChange, imageUrl }: MockupDialogProps) => {
 
   const handleDeviceChange = useCallback((d: DeviceType) => {
     setDevice(d);
-    if (!supportsOrientation(d)) setOrientation("portrait");
     resetView();
   }, [resetView]);
 
@@ -299,26 +265,8 @@ const MockupDialog = ({ open, onOpenChange, imageUrl }: MockupDialogProps) => {
           </Button>
         </div>
 
-        {/* Controls row 2: Orientation + Zoom */}
+        {/* Controls row 2: Zoom */}
         <div className="flex flex-wrap gap-4 items-center">
-          {supportsOrientation(device) && (
-            <div className="flex gap-1 p-1 rounded-lg bg-muted">
-              {(["portrait", "landscape"] as const).map((o) => (
-                <button
-                  key={o}
-                  onClick={() => { setOrientation(o); resetView(); }}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                    orientation === o
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {o === "portrait" ? "Portrait" : "Landscape"}
-                </button>
-              ))}
-            </div>
-          )}
-
           <div className="flex items-center gap-3 flex-1 min-w-[180px]">
             <span className="text-xs text-muted-foreground whitespace-nowrap">Zoom {zoom.toFixed(1)}x</span>
             <Slider
@@ -347,7 +295,7 @@ const MockupDialog = ({ open, onOpenChange, imageUrl }: MockupDialogProps) => {
           className={`flex items-center justify-center p-12 rounded-xl ${bgClass}`}
           style={{ minHeight: 320 }}
         >
-          <div className={`${getMaxWidth(device, orientation)} w-full`}>
+          <div className={`${imageMaxWidths[device]} w-full`}>
             <Frame>
               <InteractiveImage
                 imageUrl={imageUrl}
