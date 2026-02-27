@@ -8,6 +8,7 @@ import pageframeLogo from "@/assets/pageframe-logo.png";
 
 const SharedCapture = () => {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [asset, setAsset] = useState<{ file_url: string; format: string; width: number | null; height: number | null } | null>(null);
