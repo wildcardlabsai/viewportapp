@@ -421,7 +421,7 @@ const MockupDialog = ({ open, onOpenChange, imageUrl, sourceUrl, userId }: Mocku
                   >
                     <Icon className="w-3.5 h-3.5" />
                     {d.label}
-                    {hasCached && <span className="w-1.5 h-1.5 rounded-full bg-green-400 ml-auto" />}
+                    {hasCached && <span className="w-1.5 h-1.5 rounded-full bg-accent ml-auto" />}
                   </button>
                 );
               })}
