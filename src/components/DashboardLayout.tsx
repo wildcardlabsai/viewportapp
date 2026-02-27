@@ -66,7 +66,7 @@ const DashboardLayout = ({ children, active }: { children: ReactNode; active: st
       {/* Desktop sidebar */}
       <aside className="w-64 border-r bg-card hidden lg:flex flex-col">
         <div className="p-4 border-b">
-          <img src={pageframeLogo} alt="PageFrame" className="h-7" />
+          <img src={pageframeLogo} alt="PageFrame" className="h-7 cursor-pointer" onClick={() => navigate("/dashboard")} />
         </div>
         {navContent}
       </aside>
