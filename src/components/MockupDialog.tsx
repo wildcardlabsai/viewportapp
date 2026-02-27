@@ -37,51 +37,65 @@ const backgrounds: { id: BgStyle; label: string; className: string }[] = [
 
 const MacBookFrame = ({ children }: { children: React.ReactNode }) => (
   <div className="flex flex-col items-center">
-    {/* Screen */}
-    <div className="rounded-t-xl border-[8px] border-[hsl(220,9%,46%)] bg-[hsl(220,9%,46%)] shadow-2xl">
-      <div className="rounded-[4px] overflow-hidden">{children}</div>
+    {/* Screen bezel */}
+    <div className="relative rounded-t-[12px] border-[10px] border-[hsl(230,5%,15%)] bg-[hsl(230,5%,15%)] shadow-[0_0_0_1px_hsl(230,5%,25%),0_20px_60px_-10px_rgba(0,0,0,0.5)]">
+      {/* Camera dot */}
+      <div className="absolute top-[-6px] left-1/2 -translate-x-1/2 w-[6px] h-[6px] rounded-full bg-[hsl(230,5%,25%)] z-10" />
+      <div className="rounded-[2px] overflow-hidden">{children}</div>
     </div>
-    {/* Notch */}
-    <div className="w-[15%] h-[6px] bg-[hsl(220,9%,46%)] rounded-b-sm" />
+    {/* Hinge */}
+    <div className="w-[18%] h-[8px] bg-gradient-to-b from-[hsl(230,5%,15%)] to-[hsl(230,5%,20%)]" style={{ borderRadius: "0 0 2px 2px" }} />
     {/* Base */}
-    <div className="w-[110%] h-[10px] bg-gradient-to-b from-[hsl(220,13%,78%)] to-[hsl(220,13%,70%)] rounded-b-lg" />
+    <div className="w-[108%] h-[8px] bg-gradient-to-b from-[hsl(220,8%,82%)] via-[hsl(220,8%,78%)] to-[hsl(220,8%,72%)] rounded-b-md shadow-[0_2px_8px_rgba(0,0,0,0.15)]" />
+    <div className="w-[110%] h-[2px] bg-gradient-to-b from-[hsl(220,8%,68%)] to-[hsl(220,8%,65%)] rounded-b-lg" />
   </div>
 );
 
 const IPhoneFrame = ({ children }: { children: React.ReactNode }) => (
-  <div className="relative rounded-[2.5rem] border-[6px] border-[hsl(222,47%,11%)] bg-[hsl(222,47%,11%)] shadow-2xl p-1">
+  <div className="relative rounded-[3rem] bg-[hsl(230,5%,12%)] shadow-[0_0_0_2px_hsl(230,5%,22%),0_0_0_3px_hsl(230,5%,8%),0_20px_60px_-10px_rgba(0,0,0,0.5)] p-[10px]">
+    {/* Side buttons - volume */}
+    <div className="absolute left-[-3px] top-[22%] w-[3px] h-[20px] bg-[hsl(230,5%,18%)] rounded-l-sm" />
+    <div className="absolute left-[-3px] top-[30%] w-[3px] h-[30px] bg-[hsl(230,5%,18%)] rounded-l-sm" />
+    <div className="absolute left-[-3px] top-[38%] w-[3px] h-[30px] bg-[hsl(230,5%,18%)] rounded-l-sm" />
+    {/* Power button */}
+    <div className="absolute right-[-3px] top-[28%] w-[3px] h-[36px] bg-[hsl(230,5%,18%)] rounded-r-sm" />
     {/* Dynamic Island */}
-    <div className="absolute top-3 left-1/2 -translate-x-1/2 w-[28%] h-[18px] bg-[hsl(222,47%,11%)] rounded-full z-10" />
+    <div className="absolute top-[14px] left-1/2 -translate-x-1/2 w-[25%] h-[14px] bg-[hsl(230,5%,5%)] rounded-full z-10" />
     {/* Screen */}
-    <div className="rounded-[2rem] overflow-hidden">{children}</div>
+    <div className="rounded-[2.2rem] overflow-hidden bg-black">{children}</div>
     {/* Home indicator */}
-    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-[35%] h-[4px] bg-white/30 rounded-full" />
+    <div className="absolute bottom-[6px] left-1/2 -translate-x-1/2 w-[30%] h-[4px] bg-white/20 rounded-full" />
   </div>
 );
 
 const IPadFrame = ({ children }: { children: React.ReactNode }) => (
-  <div className="rounded-[1.5rem] border-[8px] border-[hsl(222,47%,11%)] bg-[hsl(222,47%,11%)] shadow-2xl p-0.5">
-    <div className="rounded-[1rem] overflow-hidden">{children}</div>
+  <div className="relative rounded-[1.2rem] bg-[hsl(230,5%,12%)] shadow-[0_0_0_2px_hsl(230,5%,22%),0_0_0_3px_hsl(230,5%,8%),0_20px_60px_-10px_rgba(0,0,0,0.5)] p-[10px]">
+    {/* Camera */}
+    <div className="absolute top-[10px] left-1/2 -translate-x-1/2 w-[5px] h-[5px] rounded-full bg-[hsl(230,5%,25%)] z-10" />
+    <div className="rounded-[6px] overflow-hidden">{children}</div>
     {/* Home indicator */}
-    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 w-[20%] h-[4px] bg-white/30 rounded-full" />
+    <div className="absolute bottom-[6px] left-1/2 -translate-x-1/2 w-[18%] h-[4px] bg-white/15 rounded-full" />
   </div>
 );
 
 const BrowserFrame = ({ children }: { children: React.ReactNode }) => (
-  <div className="rounded-xl border border-[hsl(220,13%,91%)] bg-white shadow-2xl overflow-hidden">
+  <div className="rounded-xl bg-[hsl(220,14%,96%)] shadow-[0_0_0_1px_hsl(220,13%,88%),0_20px_60px_-10px_rgba(0,0,0,0.3)] overflow-hidden">
     {/* Title bar */}
-    <div className="flex items-center gap-2 px-4 py-2.5 bg-[hsl(220,14%,96%)] border-b border-[hsl(220,13%,91%)]">
-      <div className="flex gap-1.5">
-        <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
-        <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
-        <div className="w-3 h-3 rounded-full bg-[#28c840]" />
+    <div className="flex items-center gap-2 px-4 py-2 bg-[hsl(220,14%,96%)] border-b border-[hsl(220,13%,88%)]">
+      <div className="flex gap-[6px]">
+        <div className="w-[12px] h-[12px] rounded-full bg-[#ff5f57] shadow-[inset_0_-1px_1px_rgba(0,0,0,0.1)]" />
+        <div className="w-[12px] h-[12px] rounded-full bg-[#febc2e] shadow-[inset_0_-1px_1px_rgba(0,0,0,0.1)]" />
+        <div className="w-[12px] h-[12px] rounded-full bg-[#28c840] shadow-[inset_0_-1px_1px_rgba(0,0,0,0.1)]" />
       </div>
-      <div className="flex-1 mx-8">
-        <div className="h-5 rounded-md bg-white/80 border border-[hsl(220,13%,91%)]" />
+      <div className="flex-1 mx-12">
+        <div className="h-[26px] rounded-md bg-white border border-[hsl(220,13%,88%)] shadow-[inset_0_1px_2px_rgba(0,0,0,0.05)] flex items-center justify-center">
+          <div className="w-[8px] h-[8px] rounded-full border border-[hsl(220,13%,75%)] mr-1.5 opacity-60" />
+          <div className="w-[40%] h-[8px] rounded bg-[hsl(220,13%,90%)]" />
+        </div>
       </div>
     </div>
     {/* Content */}
-    <div>{children}</div>
+    <div className="bg-white">{children}</div>
   </div>
 );
 
