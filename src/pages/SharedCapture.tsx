@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Download, Loader2, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import pageframeLogo from "@/assets/pageframe-logo.png";
 
 const SharedCapture = () => {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [asset, setAsset] = useState<{ file_url: string; format: string; width: number | null; height: number | null } | null>(null);
@@ -69,7 +70,7 @@ const SharedCapture = () => {
   if (error) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
-        <img src={pageframeLogo} alt="PageFrame" className="h-8 mb-2" />
+        <img src={pageframeLogo} alt="PageFrame" className="h-8 mb-2 cursor-pointer" onClick={() => navigate("/")} />
         <p className="text-lg font-medium text-foreground">{error}</p>
         <p className="text-sm text-muted-foreground">The capture you're looking for doesn't exist or is no longer available.</p>
       </div>
@@ -79,7 +80,7 @@ const SharedCapture = () => {
   if (shareLink?.password_hash && !authenticated) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
-        <img src={pageframeLogo} alt="PageFrame" className="h-8 mb-4" />
+        <img src={pageframeLogo} alt="PageFrame" className="h-8 mb-4 cursor-pointer" onClick={() => navigate("/")} />
         <Lock className="w-8 h-8 text-muted-foreground" />
         <p className="text-lg font-medium">This capture is password protected</p>
         <div className="flex gap-2 w-72">
@@ -93,7 +94,7 @@ const SharedCapture = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="flex items-center justify-between p-4 border-b bg-card">
-        <img src={pageframeLogo} alt="PageFrame" className="h-6" />
+        <img src={pageframeLogo} alt="PageFrame" className="h-6 cursor-pointer" onClick={() => navigate("/")} />
         {shareLink?.allow_download && asset && (
           <a href={asset.file_url} download>
             <Button variant="outline" size="sm"><Download className="w-4 h-4 mr-2" /> Download</Button>

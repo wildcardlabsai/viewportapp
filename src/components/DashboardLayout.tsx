@@ -66,7 +66,7 @@ const DashboardLayout = ({ children, active }: { children: ReactNode; active: st
       {/* Desktop sidebar */}
       <aside className="w-64 border-r bg-card hidden lg:flex flex-col">
         <div className="p-4 border-b">
-          <img src={pageframeLogo} alt="PageFrame" className="h-7" />
+          <img src={pageframeLogo} alt="PageFrame" className="h-7 cursor-pointer" onClick={() => navigate("/dashboard")} />
         </div>
         {navContent}
       </aside>
@@ -74,7 +74,7 @@ const DashboardLayout = ({ children, active }: { children: ReactNode; active: st
       {/* Mobile header + sheet */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="lg:hidden flex items-center justify-between p-3 border-b bg-card">
-          <img src={pageframeLogo} alt="PageFrame" className="h-6" />
+          <img src={pageframeLogo} alt="PageFrame" className="h-6 cursor-pointer" onClick={() => navigate("/dashboard")} />
           <Button variant="ghost" size="icon" onClick={() => setMobileOpen(!mobileOpen)}>
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </Button>
@@ -85,7 +85,7 @@ const DashboardLayout = ({ children, active }: { children: ReactNode; active: st
             <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
             <aside className="relative w-64 bg-card border-r flex flex-col z-10">
               <div className="p-4 border-b flex items-center justify-between">
-                <img src={pageframeLogo} alt="PageFrame" className="h-7" />
+                <img src={pageframeLogo} alt="PageFrame" className="h-7 cursor-pointer" onClick={() => navigate("/dashboard")} />
                 <Button variant="ghost" size="icon" onClick={() => setMobileOpen(false)}>
                   <X className="w-4 h-4" />
                 </Button>
