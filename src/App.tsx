@@ -16,6 +16,7 @@ import Schedules from "./pages/Schedules";
 import Team from "./pages/Team";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
