@@ -4,7 +4,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { Download, Loader2, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import pageframeLogo from "@/assets/pageframe-logo.png";
+
+async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
 
 const SharedCapture = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -15,6 +25,7 @@ const SharedCapture = () => {
   const [shareLink, setShareLink] = useState<{ allow_download: boolean; password_hash: string | null } | null>(null);
   const [passwordInput, setPasswordInput] = useState("");
   const [authenticated, setAuthenticated] = useState(false);
+  const [passwordError, setPasswordError] = useState(false);
 
   useEffect(() => {
     const fetchShare = async () => {
@@ -47,6 +58,14 @@ const SharedCapture = () => {
   }, [slug]);
 
   const handlePassword = async () => {
+    if (!passwordInput.trim()) return;
+    setPasswordError(false);
+    const hashed = await hashPassword(passwordInput);
+    if (hashed !== shareLink?.password_hash) {
+      setPasswordError(true);
+      toast.error("Incorrect password");
+      return;
+    }
     setAuthenticated(true);
     const { data: link } = await supabase
       .from("share_links")
@@ -84,9 +103,17 @@ const SharedCapture = () => {
         <Lock className="w-8 h-8 text-muted-foreground" />
         <p className="text-lg font-medium">This capture is password protected</p>
         <div className="flex gap-2 w-72">
-          <Input type="password" placeholder="Enter password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handlePassword()} />
+          <Input
+            type="password"
+            placeholder="Enter password"
+            value={passwordInput}
+            onChange={(e) => { setPasswordInput(e.target.value); setPasswordError(false); }}
+            onKeyDown={(e) => e.key === "Enter" && handlePassword()}
+            className={passwordError ? "border-destructive" : ""}
+          />
           <Button variant="brand" onClick={handlePassword}>Unlock</Button>
         </div>
+        {passwordError && <p className="text-xs text-destructive">Incorrect password. Please try again.</p>}
       </div>
     );
   }

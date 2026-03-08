@@ -1,11 +1,14 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Monitor, Smartphone, Tablet } from "lucide-react";
+import { ArrowRight, Monitor, Smartphone, Tablet, Menu, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import pageframeLogo from "@/assets/pageframe-logo.png";
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass">
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
@@ -17,11 +20,33 @@ const Navbar = () => {
           <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
           <a href="#faq" className="text-sm text-muted-foreground hover:text-foreground transition-colors">FAQ</a>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => navigate("/auth")}>Log in</Button>
           <Button variant="brand" size="sm" onClick={() => navigate("/auth")}>Start free</Button>
         </div>
+        <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
+          {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </Button>
       </div>
+
+      {/* Mobile menu */}
+      {mobileOpen && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="md:hidden border-t bg-card/95 backdrop-blur-lg"
+        >
+          <div className="container mx-auto px-4 py-4 flex flex-col gap-3">
+            <a href="#features" onClick={() => setMobileOpen(false)} className="text-sm text-muted-foreground hover:text-foreground transition-colors py-2">Features</a>
+            <a href="#pricing" onClick={() => setMobileOpen(false)} className="text-sm text-muted-foreground hover:text-foreground transition-colors py-2">Pricing</a>
+            <a href="#faq" onClick={() => setMobileOpen(false)} className="text-sm text-muted-foreground hover:text-foreground transition-colors py-2">FAQ</a>
+            <div className="flex gap-2 pt-2 border-t">
+              <Button variant="ghost" size="sm" className="flex-1" onClick={() => { navigate("/auth"); setMobileOpen(false); }}>Log in</Button>
+              <Button variant="brand" size="sm" className="flex-1" onClick={() => { navigate("/auth"); setMobileOpen(false); }}>Start free</Button>
+            </div>
+          </div>
+        </motion.div>
+      )}
     </nav>
   );
 };
@@ -40,11 +65,6 @@ const Hero = () => {
           transition={{ duration: 0.7 }}
           className="text-center max-w-4xl mx-auto"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            Now in public beta
-          </div>
-          
           <h1 className="font-display text-5xl md:text-7xl font-bold tracking-tight mb-6">
             Capture pixel-perfect{" "}
             <span className="text-gradient">screenshots</span>{" "}
@@ -84,7 +104,7 @@ const Hero = () => {
                 </div>
                 <div className="flex-1 flex justify-center">
                   <div className="px-4 py-1 bg-background rounded-md text-xs text-muted-foreground w-64 text-center">
-                    app.pageframe.app
+                    pageframe.app
                   </div>
                 </div>
               </div>

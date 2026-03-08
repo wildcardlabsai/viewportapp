@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Download, ExternalLink, RefreshCw, Loader2, AlertCircle, CheckCircle, Clock, XCircle, Share2, Monitor, Pencil, GitCompare, FileText, FolderOpen } from "lucide-react";
+import { Download, ExternalLink, RefreshCw, Loader2, AlertCircle, CheckCircle, Clock, XCircle, Share2, Monitor, Pencil, GitCompare, FileText, FolderOpen, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayout";
 import MockupDialog from "@/components/MockupDialog";
@@ -102,6 +103,20 @@ const History = () => {
     const { error } = await supabase.functions.invoke("process-captures", { body: { job_ids: [jobId] } });
     if (error) toast.error("Retry failed");
     else { toast.success("Retrying…"); fetchData(); }
+  };
+
+  const deleteCapture = async (jobId: string) => {
+    const jobAssets = assets.filter((a) => a.job_id === jobId);
+    // Delete assets first
+    for (const a of jobAssets) {
+      await supabase.from("capture_assets").delete().eq("id", a.id);
+    }
+    // Delete share links for those assets
+    for (const a of jobAssets) {
+      await supabase.from("share_links").delete().eq("asset_id", a.id);
+    }
+    toast.success("Capture deleted");
+    fetchData();
   };
 
   const toggleCompareSelection = (assetUrl: string) => {
@@ -234,6 +249,28 @@ const History = () => {
                         </a>
                       </>
                     )}
+                    {/* Delete button */}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" title="Delete">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete capture?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete this capture and its assets. This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteCapture(job.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                     {job.status === "failed" && (
                       <Button variant="outline" size="sm" onClick={() => retryJob(job.id)}>Retry</Button>
                     )}

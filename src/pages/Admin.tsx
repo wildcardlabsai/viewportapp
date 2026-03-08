@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, Users, BarChart3, Plus, Trash2, ArrowUpDown, Shield, LogOut } from "lucide-react";
+import { Loader2, Users, BarChart3, Plus, Trash2, Shield, LogOut } from "lucide-react";
 import pageframeLogo from "@/assets/pageframe-logo.png";
 
 interface Profile {
@@ -32,6 +32,7 @@ interface Analytics {
 
 const Admin = () => {
   const { user, loading: authLoading, signOut } = useAuth();
+  const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
@@ -57,11 +58,6 @@ const Admin = () => {
   }, [user]);
 
   const fetchUsers = useCallback(async () => {
-    const { data, error } = await supabase.functions.invoke("admin", {
-      body: null,
-      headers: { "Content-Type": "application/json" },
-    });
-    // Use query params approach
     const resp = await supabase.functions.invoke("admin?action=list-users");
     if (resp.error) {
       toast.error("Failed to load users");
@@ -151,7 +147,7 @@ const Admin = () => {
   }
 
   if (!user) return <Navigate to="/auth" replace />;
-  if (!isAdmin) return <Navigate to="/" replace />;
+  if (!isAdmin) return <Navigate to="/dashboard" replace />;
 
   const filteredProfiles = profiles.filter((p) => {
     const q = searchQuery.toLowerCase();
@@ -168,13 +164,13 @@ const Admin = () => {
       {/* Top bar */}
       <header className="border-b bg-card px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <img src={pageframeLogo} alt="PageFrame" className="h-6" />
+          <img src={pageframeLogo} alt="PageFrame" className="h-6 cursor-pointer" onClick={() => navigate("/dashboard")} />
           <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-semibold">
             <Shield className="w-3 h-3" /> Admin
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => window.location.href = "/"}>
+          <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
             Back to App
           </Button>
           <Button variant="ghost" size="sm" onClick={signOut}>
@@ -210,7 +206,6 @@ const Admin = () => {
           </div>
         ) : tab === "analytics" ? (
           <div className="space-y-6">
-            {/* Stats cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { label: "Total Users", value: analytics?.totalUsers || 0 },
@@ -225,7 +220,6 @@ const Admin = () => {
               ))}
             </div>
 
-            {/* Plan distribution */}
             <div className="p-5 rounded-xl border bg-card">
               <h3 className="font-semibold mb-4">Plan Distribution</h3>
               <div className="grid grid-cols-3 gap-4">

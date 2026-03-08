@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { Mail, ArrowLeft, Loader2, Eye, EyeOff } from "lucide-react";
 import pageframeLogo from "@/assets/pageframe-logo.png";
 
-type AuthMode = "login" | "register" | "magic" | "sent";
+type AuthMode = "login" | "register" | "magic" | "sent" | "forgot" | "forgot-sent";
 
 const Auth = () => {
   const { user, loading } = useAuth();
@@ -19,21 +19,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [demoLoading, setDemoLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-
-  const handleDemoSignIn = async () => {
-    setDemoLoading(true);
-    const demoEmail = "demo@pageframe.app";
-    const demoPassword = "demo123456";
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email: demoEmail, password: demoPassword });
-    if (signInError) {
-      await supabase.auth.signUp({ email: demoEmail, password: demoPassword });
-      const { error } = await supabase.auth.signInWithPassword({ email: demoEmail, password: demoPassword });
-      if (error) toast.error("Demo sign-in failed: " + error.message);
-    }
-    setDemoLoading(false);
-  };
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
@@ -57,6 +43,7 @@ const Auth = () => {
   const handleEmailPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password) return;
+    if (password.length < 6) { toast.error("Password must be at least 6 characters"); return; }
     setSubmitting(true);
     if (mode === "register") {
       const { error } = await supabase.auth.signUp({
@@ -87,6 +74,20 @@ const Auth = () => {
     else setMode("sent");
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setSubmitting(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setSubmitting(false);
+    if (error) toast.error(error.message);
+    else setMode("forgot-sent");
+  };
+
+  const showDemoOrDivider = mode !== "sent" && mode !== "forgot-sent";
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
@@ -102,10 +103,25 @@ const Auth = () => {
                 We sent a magic link to <strong className="text-foreground">{email}</strong>
               </p>
             </>
+          ) : mode === "forgot-sent" ? (
+            <>
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <Mail className="w-7 h-7 text-primary" />
+              </div>
+              <h1 className="font-display text-2xl font-bold mb-2">Check your email</h1>
+              <p className="text-muted-foreground text-sm">
+                We sent a password reset link to <strong className="text-foreground">{email}</strong>
+              </p>
+            </>
+          ) : mode === "forgot" ? (
+            <>
+              <h1 className="font-display text-2xl font-bold mb-2">Reset your password</h1>
+              <p className="text-muted-foreground text-sm">Enter your email and we'll send you a reset link.</p>
+            </>
           ) : (
             <>
               <h1 className="font-display text-2xl font-bold mb-2">
-                {mode === "register" ? "Create your account" : "Sign in to PageFrame"}
+                {mode === "register" ? "Create your account" : mode === "magic" ? "Sign in to PageFrame" : "Sign in to PageFrame"}
               </h1>
               <p className="text-muted-foreground text-sm">
                 {mode === "register"
@@ -118,10 +134,24 @@ const Auth = () => {
           )}
         </div>
 
-        {mode === "sent" ? (
+        {mode === "sent" || mode === "forgot-sent" ? (
           <Button variant="outline" className="w-full h-11" onClick={() => { setMode("login"); setEmail(""); }}>
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to sign in
           </Button>
+        ) : mode === "forgot" ? (
+          <form onSubmit={handleForgotPassword} className="space-y-4">
+            <div>
+              <Label htmlFor="email" className="mb-2 block">Email address</Label>
+              <Input id="email" type="email" placeholder="you@company.com" value={email} onChange={(e) => setEmail(e.target.value)} className="h-11" required autoFocus />
+            </div>
+            <Button type="submit" variant="brand" className="w-full h-11" disabled={submitting}>
+              {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Mail className="w-4 h-4 mr-2" />}
+              Send reset link
+            </Button>
+            <Button type="button" variant="ghost" className="w-full" onClick={() => setMode("login")}>
+              Back to sign in
+            </Button>
+          </form>
         ) : mode === "magic" ? (
           <form onSubmit={handleMagicLink} className="space-y-4">
             <div>
@@ -161,7 +191,14 @@ const Auth = () => {
               <Input id="email" type="email" placeholder="you@company.com" value={email} onChange={(e) => setEmail(e.target.value)} className="h-11" required autoFocus />
             </div>
             <div>
-              <Label htmlFor="password" className="mb-2 block">Password</Label>
+              <div className="flex items-center justify-between mb-2">
+                <Label htmlFor="password">Password</Label>
+                {mode === "login" && (
+                  <button type="button" className="text-xs text-primary hover:underline" onClick={() => setMode("forgot")}>
+                    Forgot password?
+                  </button>
+                )}
+              </div>
               <div className="relative">
                 <Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="h-11 pr-10" required minLength={6} />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
@@ -187,16 +224,6 @@ const Auth = () => {
             </p>
           </form>
         )}
-
-        <div className="relative my-4">
-          <div className="absolute inset-0 flex items-center"><div className="w-full border-t" /></div>
-          <div className="relative flex justify-center text-xs"><span className="bg-background px-2 text-muted-foreground">or</span></div>
-        </div>
-
-        <Button variant="outline" className="w-full h-11" onClick={handleDemoSignIn} disabled={demoLoading}>
-          {demoLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-          🚀 Sign in as Demo User
-        </Button>
 
         <p className="text-center text-xs text-muted-foreground mt-6">
           By continuing, you agree to our Terms of Service and Privacy Policy.

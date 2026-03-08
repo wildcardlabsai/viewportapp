@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayout";
 
@@ -37,6 +37,37 @@ const devicePresets = [
   { id: "ipad-portrait", label: "iPad Pro", width: 1024, height: 1366 },
 ];
 
+/** Compute the next run time from a simple cron expression */
+function getNextRunFromCron(cron: string): Date {
+  const now = new Date();
+  const next = new Date(now);
+  if (cron === "0 * * * *") {
+    // Every hour at :00
+    next.setMinutes(0, 0, 0);
+    next.setHours(next.getHours() + 1);
+  } else if (cron === "0 */6 * * *") {
+    // Every 6 hours
+    const currentHour = now.getHours();
+    const nextSlot = Math.ceil((currentHour + 1) / 6) * 6;
+    next.setHours(nextSlot, 0, 0, 0);
+    if (next <= now) next.setHours(next.getHours() + 6);
+  } else if (cron === "0 0 * * *") {
+    // Daily at midnight
+    next.setDate(next.getDate() + 1);
+    next.setHours(0, 0, 0, 0);
+  } else if (cron === "0 0 * * 1") {
+    // Weekly on Monday
+    const dayOfWeek = now.getDay();
+    const daysUntilMonday = dayOfWeek === 0 ? 1 : dayOfWeek === 1 ? 7 : 8 - dayOfWeek;
+    next.setDate(next.getDate() + daysUntilMonday);
+    next.setHours(0, 0, 0, 0);
+  } else {
+    // Fallback: +1 day
+    next.setDate(next.getDate() + 1);
+  }
+  return next;
+}
+
 const Schedules = () => {
   const { user } = useAuth();
   const [schedules, setSchedules] = useState<ScheduledCapture[]>([]);
@@ -44,7 +75,6 @@ const Schedules = () => {
   const [showForm, setShowForm] = useState(false);
   const [creating, setCreating] = useState(false);
 
-  // Form state
   const [url, setUrl] = useState("");
   const [device, setDevice] = useState("desktop-1440");
   const [frequency, setFrequency] = useState("0 0 * * *");
@@ -66,8 +96,7 @@ const Schedules = () => {
     if (!user || !url.trim()) return;
     setCreating(true);
     const preset = devicePresets.find((d) => d.id === device)!;
-    const nextRun = new Date();
-    nextRun.setHours(nextRun.getHours() + 1);
+    const nextRun = getNextRunFromCron(frequency);
 
     const { error } = await supabase.from("scheduled_captures").insert({
       user_id: user.id,
@@ -166,9 +195,27 @@ const Schedules = () => {
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleActive(s.id, s.is_active)} title={s.is_active ? "Pause" : "Resume"}>
                   {s.is_active ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                 </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(s.id)}>
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete schedule?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will permanently delete this scheduled capture. This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleDelete(s.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             ))}
           </div>

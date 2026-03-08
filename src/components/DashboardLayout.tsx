@@ -1,8 +1,9 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Camera, History, FolderOpen, Settings, LogOut, Menu, X, Moon, Sun, Clock, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import pageframeLogo from "@/assets/pageframe-logo.png";
 
 const navItems = [
@@ -18,15 +19,26 @@ const DashboardLayout = ({ children, active }: { children: ReactNode; active: st
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
+  const [dark, setDark] = useState(() => {
+    const stored = localStorage.getItem("theme");
+    if (stored) return stored === "dark";
+    return document.documentElement.classList.contains("dark");
+  });
 
-  const toggleDark = () => {
-    document.documentElement.classList.toggle("dark");
-    setDark(!dark);
-  };
+  useEffect(() => {
+    if (dark) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    localStorage.setItem("theme", dark ? "dark" : "light");
+  }, [dark]);
+
+  const toggleDark = () => setDark(!dark);
 
   const handleSignOut = async () => {
     await signOut();
+    toast.success("Signed out successfully");
     navigate("/");
   };
 
