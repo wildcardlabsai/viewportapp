@@ -63,8 +63,11 @@ Deno.serve(async (req) => {
         .eq("id", job.id);
 
       try {
+        // Try ScreenshotOne first, fall back to PageShot if limit reached
+        let screenshotRes: Response;
+
         // Build ScreenshotOne URL
-        const params = new URLSearchParams({
+        const s1Params = new URLSearchParams({
           access_key: SCREENSHOTONE_API_KEY,
           url: job.url,
           viewport_width: String(job.viewport_width),
@@ -78,23 +81,59 @@ Deno.serve(async (req) => {
           block_ads: String(job.hide_popups),
         });
 
-        // Custom CSS injection
         if (job.custom_css) {
-          params.set("css", job.custom_css);
+          s1Params.set("css", job.custom_css);
         }
 
         if (job.background === "transparent") {
-          params.set("omit_background", "true");
+          s1Params.set("omit_background", "true");
         } else if (job.background === "dark") {
-          params.set("dark_mode", "true");
+          s1Params.set("dark_mode", "true");
         }
 
-        const screenshotUrl = `https://api.screenshotone.com/take?${params.toString()}`;
-        const screenshotRes = await fetch(screenshotUrl);
+        const screenshotOneUrl = `https://api.screenshotone.com/take?${s1Params.toString()}`;
+        screenshotRes = await fetch(screenshotOneUrl);
 
+        // If ScreenshotOne fails with limit/quota error, fall back to PageShot
         if (!screenshotRes.ok) {
           const errText = await screenshotRes.text();
-          throw new Error(`ScreenshotOne API error [${screenshotRes.status}]: ${errText}`);
+          const isLimitError = errText.includes("limit") || errText.includes("quota") || screenshotRes.status === 429;
+
+          if (isLimitError) {
+            console.log(`ScreenshotOne limit hit for job ${job.id}, falling back to PageShot`);
+
+            const psParams = new URLSearchParams({
+              url: job.url,
+              width: String(job.viewport_width),
+              height: String(job.viewport_height),
+              format: job.output_format === "pdf" ? "png" : job.output_format,
+              full_page: String(job.full_page),
+              block_ads: String(job.hide_popups || job.hide_cookie_banners),
+              hide_banners: String(job.hide_cookie_banners),
+            });
+
+            if (job.device_scale_factor > 1) {
+              psParams.set("device_scale_factor", String(job.device_scale_factor));
+            }
+
+            if (job.background === "dark") {
+              psParams.set("dark_mode", "true");
+            }
+
+            if (job.delay_seconds > 0) {
+              psParams.set("delay", String(job.delay_seconds));
+            }
+
+            const pageShotUrl = `https://pageshot.site/v1/screenshot?${psParams.toString()}`;
+            screenshotRes = await fetch(pageShotUrl);
+
+            if (!screenshotRes.ok) {
+              const psErr = await screenshotRes.text();
+              throw new Error(`Both APIs failed. PageShot error [${screenshotRes.status}]: ${psErr}`);
+            }
+          } else {
+            throw new Error(`ScreenshotOne API error [${screenshotRes.status}]: ${errText}`);
+          }
         }
 
         const imageBuffer = await screenshotRes.arrayBuffer();
